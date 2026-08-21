@@ -26,6 +26,22 @@ We are not trying to build an AI that decides what is morally correct for everyo
 
 We are building infrastructure that lets users choose their own values, shows the evidence behind every judgment, and automates only bounded, reversible, auditable actions.
 
+## Project direction
+
+WA Commons is organized around three horizons:
+
+- **Short term:** prove one useful, reproducible product loop with **Peace Capital v0** — evidence-driven screening, user-defined policies, and an explainable paper portfolio.
+- **Medium term:** extract a reusable **Peace Router** so the same evidence/policy/audit layer can serve a second voluntary economic domain.
+- **Long term:** grow into internationally reusable, open peace-incentive infrastructure with bounded maintenance agents and community-owned implementations.
+
+The project is **exit-criteria driven rather than calendar driven**. We do not advance because time passed; we advance when the current claims are demonstrated.
+
+See:
+
+- [`GOALS.md`](GOALS.md) — short-, medium-, and long-term objectives and success criteria.
+- [`ROADMAP.md`](ROADMAP.md) — phased development roadmap and hard gates.
+- [`MANIFESTO.md`](MANIFESTO.md) — project philosophy.
+
 ## Design principles
 
 1. **User benefit first** — a peace-oriented service that harms its users will not spread.
@@ -60,6 +76,19 @@ It will:
 Possible evidence categories include military and weapons exposure, political finance, conflict-linked supply chains, human-rights controversies, and positive peace-related activities. The schema and thresholds are open research questions, not predetermined doctrine.
 
 See [`experiments/peace-capital/README.md`](experiments/peace-capital/README.md).
+
+## Immediate development target
+
+The next milestone is **M1 — Reproducible Evidence Graph**.
+
+Current priority issues:
+
+- **#2** minimal evidence schema;
+- **#3** reusable OSS for entity resolution;
+- **#4** public data-source registry;
+- **#7** threat model.
+
+Portfolio recommendation work is intentionally gated behind this evidence foundation.
 
 ## The longer-term idea
 
@@ -96,7 +125,7 @@ Useful contributions include:
 - documenting failed approaches;
 - proposing new peace-positive experiments.
 
-Start with the issues marked **good first contribution** or open a discussion describing what you want to test.
+Start with the open issues or use the contribution templates to propose a small, verifiable task.
 
 ## Status
 
