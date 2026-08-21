@@ -8,7 +8,7 @@ import urllib.request
 
 from jsonschema import Draft202012Validator
 
-from wa_commons.evidence.mod_procurement import SOURCE_URL, observation_to_claim, parse_workbook
+from wa_commons.evidence.mod_procurement import SOURCE_URL, observation_to_claim, parse_workbook, sha256
 
 
 def download(url: str, path: Path) -> None:
@@ -31,6 +31,7 @@ def main(out_dir: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     snapshot = out / "04_buppin_k.xlsx"
     download(SOURCE_URL, snapshot)
+    source_sha256 = sha256(snapshot)
 
     retrieved_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     observations = parse_workbook(snapshot, retrieved_at=retrieved_at)
@@ -39,6 +40,7 @@ def main(out_dir: str) -> None:
 
     report = {
         "source_url": SOURCE_URL,
+        "source_sha256": source_sha256,
         "retrieved_at": retrieved_at,
         "record_count": len(observations),
         "resolved_count": sum(obs.identity_decision == "AUTO_LINK" for obs in observations),
