@@ -1,0 +1,41 @@
+name: contract-subject-semantics
+
+on:
+  pull_request:
+    paths:
+      - "src/wa_commons/evidence/contract_subject.py"
+      - "src/wa_commons/evidence/mod_procurement.py"
+      - "tests/test_contract_subject_semantics.py"
+      - "tests/fixtures/contract_subject_labels.json"
+      - "scripts/run_contract_subject_semantics.py"
+      - "schemas/evidence-claim.v0.1.schema.json"
+      - ".github/workflows/contract-subject-semantics.yml"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: python -m pip install -e '.[dev]'
+      - name: Targeted tests
+        run: python -m pytest -q tests/test_contract_subject_semantics.py
+      - name: Evaluate fixed real snapshot
+        run: python scripts/run_contract_subject_semantics.py artifacts/contract-subject-semantics
+      - name: Show report
+        run: cat artifacts/contract-subject-semantics/report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contract-subject-semantics-v01
+          path: |
+            artifacts/contract-subject-semantics/report.json
+            artifacts/contract-subject-semantics/fixture-evaluation.json
+            artifacts/contract-subject-semantics/classified-observations.json
+            artifacts/contract-subject-semantics/review-queue.json
+            artifacts/contract-subject-semantics/classification-claims.json
+          retention-days: 30
