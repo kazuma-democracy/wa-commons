@@ -17,7 +17,7 @@ def src(name: str) -> SourceRef:
     )
 
 
-def entity(code="7203", name="トヨタ自動車"):
+def entity(code="7203", name="Example Motors"):
     return from_jpx_row(
         {"コード": code, "銘柄名": name, "市場・商品区分": "プライム（内国株式）"},
         src("jpx"),
@@ -28,16 +28,16 @@ def test_edinet_security_code_bridges_to_corporate_number_without_name_match():
     edinet = [
         {
             "証券コード": "7203",
-            "ＥＤＩＮＥＴコード": "E02144",
-            "法人番号": "1180301018771",
+            "ＥＤＩＮＥＴコード": "E00001",
+            "法人番号": "1111111111111",
             "提出者名": "A deliberately different display name",
         }
     ]
-    nta = [{"法人番号": "1180301018771", "商号又は名称": "トヨタ自動車株式会社"}]
+    nta = [{"法人番号": "1111111111111", "商号又は名称": "Example Motors株式会社"}]
     gleif = [
         {
-            "LEI": "353800ZYQV9W8Z0H2C23",
-            "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1180301018771",
+            "LEI": "549300EXAMPLE0000001",
+            "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1111111111111",
         }
     ]
     [result] = enrich_entity_batch(
@@ -51,10 +51,10 @@ def test_edinet_security_code_bridges_to_corporate_number_without_name_match():
     )
     ids = result.identifier_map()
     assert ids["JPX_SECURITY_CODE"] == {"7203"}
-    assert ids["EDINET_CODE"] == {"E02144"}
-    assert ids["JP_CORPORATE_NUMBER"] == {"1180301018771"}
-    assert ids["LEI"] == {"353800ZYQV9W8Z0H2C23"}
-    assert "トヨタ自動車株式会社" in result.aliases
+    assert ids["EDINET_CODE"] == {"E00001"}
+    assert ids["JP_CORPORATE_NUMBER"] == {"1111111111111"}
+    assert ids["LEI"] == {"549300EXAMPLE0000001"}
+    assert "Example Motors株式会社" in result.aliases
 
 
 def test_duplicate_edinet_security_code_is_not_auto_linked():
@@ -67,10 +67,10 @@ def test_duplicate_edinet_security_code_is_not_auto_linked():
 
 def test_duplicate_gleif_registration_id_is_not_auto_linked():
     rows = [
-        {"LEI": "LEI1", "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1180301018771"},
-        {"LEI": "LEI2", "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1180301018771"},
+        {"LEI": "LEI1", "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1111111111111"},
+        {"LEI": "LEI2", "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1111111111111"},
     ]
-    assert "1180301018771" not in build_gleif_registration_index(rows)
+    assert "1111111111111" not in build_gleif_registration_index(rows)
 
 
 def test_name_only_match_cannot_enrich():
@@ -79,7 +79,7 @@ def test_name_only_match_cannot_enrich():
             "証券コード": "9999",
             "ＥＤＩＮＥＴコード": "E99999",
             "法人番号": "9999999999999",
-            "提出者名": "トヨタ自動車",
+            "提出者名": "Example Motors",
         }
     ]
     [result] = enrich_entity_batch(
