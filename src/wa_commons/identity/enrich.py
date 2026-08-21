@@ -66,7 +66,10 @@ def enrich_from_edinet(
 ) -> EntityRecord:
     incoming: list[Identifier] = []
     edinet_code = _first(edinet_row, ("ＥＤＩＮＥＴコード", "EDINETコード", "EDINET Code", "edinet_code"))
-    corporate_number = _first(edinet_row, ("法人番号", "Corporate Number", "corporate_number"))
+    corporate_number = _first(
+        edinet_row,
+        ("提出者法人番号", "法人番号", "Corporate Number", "corporate_number"),
+    )
     if edinet_code:
         incoming.append(Identifier("EDINET_CODE", edinet_code, source))
     if corporate_number:
