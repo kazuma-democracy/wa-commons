@@ -9,7 +9,6 @@ import sys
 import urllib.parse
 import urllib.request
 import zipfile
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -29,6 +28,9 @@ GLEIF_API = "https://api.gleif.org/api/v1/lei-records"
 def download(url: str, path: Path) -> None:
     req = urllib.request.Request(url, headers={"User-Agent": "wa-commons-m1/0.1"})
     with urllib.request.urlopen(req, timeout=180) as resp, path.open("wb") as out:
+        final_url = resp.geturl()
+        content_type = resp.headers.get("Content-Type", "")
+        print(f"download {url} -> {final_url} [{content_type}]")
         while chunk := resp.read(1024 * 1024):
             out.write(chunk)
 
@@ -56,6 +58,22 @@ def read_edinet_zip(path: Path) -> list[dict[str, str]]:
     raise RuntimeError("could not decode EDINET code-list CSV")
 
 
+def _zip_url_from_anchor(anchor) -> str | None:
+    candidates = [str(v) for v in anchor.attrs.values() if isinstance(v, str)]
+    candidates.append(str(anchor))
+    for candidate in candidates:
+        direct = re.search(r"https?://[^\s'\"<>]+\.zip(?:\?[^\s'\"<>]*)?", candidate)
+        if direct:
+            return direct.group(0)
+        relative = re.search(r"[A-Za-z0-9_./%?=&-]+\.zip(?:\?[^\s'\"<>]*)?", candidate)
+        if relative:
+            return urllib.parse.urljoin(NTA_PAGE, relative.group(0))
+    href = anchor.get("href")
+    if href and not str(href).lower().startswith("javascript:"):
+        return urllib.parse.urljoin(NTA_PAGE, str(href))
+    return None
+
+
 def find_nta_unicode_nationwide_url() -> str:
     req = urllib.request.Request(NTA_PAGE, headers={"User-Agent": "wa-commons-m1/0.1"})
     with urllib.request.urlopen(req, timeout=60) as resp:
@@ -65,13 +83,18 @@ def find_nta_unicode_nationwide_url() -> str:
     if heading is None:
         raise RuntimeError("NTA Unicode section not found")
     node = heading
+    inspected: list[str] = []
     while True:
         node = node.find_next()
         if node is None or (node.name in {"h2", "h3"} and node is not heading):
             break
-        if node.name == "a" and node.get("href") and "zip" in node.get_text(" ", strip=True).lower():
-            return urllib.parse.urljoin(NTA_PAGE, node["href"])
-    raise RuntimeError("NTA nationwide Unicode zip URL not found")
+        if node.name == "a" and "zip" in node.get_text(" ", strip=True).lower():
+            inspected.append(str(node)[:500])
+            url = _zip_url_from_anchor(node)
+            if url:
+                print(f"NTA nationwide Unicode candidate: {url}")
+                return url
+    raise RuntimeError(f"NTA nationwide Unicode zip URL not found; anchors={inspected[:3]}")
 
 
 def nta_rows_for_targets(zip_path: Path, targets: set[str]) -> list[dict[str, str]]:
@@ -85,7 +108,6 @@ def nta_rows_for_targets(zip_path: Path, targets: set[str]) -> list[dict[str, st
                     hit = next((v for v in row if v in targets), None)
                     if not hit:
                         continue
-                    # NTA full-data layout: corporate number is normally column 2 and name column 7.
                     official_name = row[6] if len(row) > 6 else ""
                     address = "".join(row[i] for i in (9, 10, 11) if len(row) > i)
                     found[hit] = {"法人番号": hit, "商号又は名称": official_name, "国内所在地（都道府県市区町村）": address}
@@ -138,10 +160,14 @@ def main(out_dir: str) -> None:
     entities = enrich_entity_batch(entities, edinet_rows=edinet_rows, edinet_source=edinet_source)
 
     corp_numbers = {n for e in entities if (n := strong_id(e, "JP_CORPORATE_NUMBER"))}
+    print(f"EDINET yielded {len(corp_numbers)} unique corporate numbers for 100 issuers")
 
     nta_url = find_nta_unicode_nationwide_url()
     nta_zip = out / "nta_all_unicode.zip"
     download(nta_url, nta_zip)
+    if not zipfile.is_zipfile(nta_zip):
+        preview = nta_zip.read_bytes()[:500]
+        raise RuntimeError(f"NTA download was not a zip: url={nta_url!r} preview={preview!r}")
     nta_rows = nta_rows_for_targets(nta_zip, corp_numbers)
     nta_source = SourceRef("NTA", nta_zip.name, "2026-07-31", nta_url, now, "0.1")
 
