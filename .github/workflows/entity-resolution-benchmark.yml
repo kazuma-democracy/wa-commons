@@ -1,0 +1,32 @@
+name: entity-resolution-benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/wa_commons/identity/benchmark.py'
+      - 'src/wa_commons/identity/benchmark_corpus.py'
+      - 'scripts/run_entity_resolution_benchmark.py'
+      - 'tests/test_entity_resolution_benchmark.py'
+      - '.github/workflows/entity-resolution-benchmark.yml'
+      - 'docs/results/M1_ENTITY_RESOLUTION_BENCHMARK_V01.md'
+  workflow_dispatch:
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest -q
+      - run: python scripts/run_entity_resolution_benchmark.py
+      - run: cat artifacts/entity-resolution-benchmark/report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: entity-resolution-benchmark-v01
+          path: artifacts/entity-resolution-benchmark/
+          retention-days: 30
