@@ -1,0 +1,23 @@
+name: user-policy
+on:
+  pull_request:
+    paths:
+      - 'schemas/user-policy.v0.1.schema.json'
+      - 'schemas/examples/user-policy.examples.json'
+      - 'src/wa_commons/policy/**'
+      - 'tests/test_user_policy.py'
+      - 'docs/USER_POLICY.md'
+      - '.github/workflows/user-policy.yml'
+  workflow_dispatch:
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -e '.[dev]'
+      - name: Validate policy language and evaluator behavior
+        run: python -m pytest -q tests/test_user_policy.py
