@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .benchmark import BenchmarkCase, BenchmarkRecord
+from .source_verified_cases import build_source_verified_cases
 
 
 def _r(i: int, name: str, *, corp: str = "", security: str = "", address: str = "東京都千代田区") -> BenchmarkRecord:
@@ -14,15 +15,9 @@ def _r(i: int, name: str, *, corp: str = "", security: str = "", address: str = 
 
 
 def build_v01_corpus() -> list[BenchmarkCase]:
-    """Deterministic 400-case Japanese ER calibration corpus.
-
-    v0.1 deliberately separates sourced identity facts from synthetic adversarial
-    transformations. The generated cases are for matcher calibration and safety
-    regression; they must not be published as claims about real companies.
-    """
+    """Deterministic 400-case synthetic Japanese ER calibration corpus."""
     cases: list[BenchmarkCase] = []
 
-    # 100 easy exact identifier matches.
     for i in range(100):
         corp = f"1{i:012d}"
         sec = f"{1301 + i:04d}"
@@ -34,8 +29,6 @@ def build_v01_corpus() -> list[BenchmarkCase]:
             "MATCH", "synthetic_adversarial", "Exact identifiers; legal-form variation only.",
         ))
 
-    # 100 alias/transliteration-ish cases without strong IDs: similar Japanese
-    # aliases + stable address. These exercise non-identifier review thresholds.
     for i in range(100):
         base = f"平和技研{i:03d}"
         address = f"東京都港区芝{i % 20 + 1}丁目"
@@ -48,7 +41,6 @@ def build_v01_corpus() -> list[BenchmarkCase]:
             "MATCH", "synthetic_adversarial", "Name variant plus independently aligned address.",
         ))
 
-    # 50 parent/subsidiary traps: deliberately similar names but conflicting IDs.
     for i in range(50):
         parent = f"輪ホールディングス{i:03d}"
         sub = f"輪ホールディングス{i:03d}サービス"
@@ -59,7 +51,6 @@ def build_v01_corpus() -> list[BenchmarkCase]:
             "NON_MATCH", "synthetic_adversarial", "Parent/subsidiary identity must never collapse.",
         ))
 
-    # 50 same/similar-name non-matches in different locations.
     for i in range(50):
         name = f"共栄商事{i % 10:02d}株式会社"
         cases.append(BenchmarkCase(
@@ -69,7 +60,6 @@ def build_v01_corpus() -> list[BenchmarkCase]:
             "NON_MATCH", "synthetic_adversarial", "Same display name with strongly divergent address.",
         ))
 
-    # 50 rename/merger-shaped cases: strong ID continuity overrides changed name.
     for i in range(50):
         corp = f"4{i:012d}"
         cases.append(BenchmarkCase(
@@ -79,7 +69,6 @@ def build_v01_corpus() -> list[BenchmarkCase]:
             "MATCH", "synthetic_adversarial", "Name changed; legal-entity identifier remains aligned.",
         ))
 
-    # 50 deliberately incomplete records: insufficient for consequential auto-link.
     for i in range(50):
         cases.append(BenchmarkCase(
             f"incomplete-{i:03d}", "incomplete_record",
@@ -89,3 +78,8 @@ def build_v01_corpus() -> list[BenchmarkCase]:
         ))
 
     return cases
+
+
+def build_m12_corpus() -> list[BenchmarkCase]:
+    """M1.2 corpus: original synthetic fixtures plus source-verified Japanese cases."""
+    return [*build_v01_corpus(), *build_source_verified_cases()]
