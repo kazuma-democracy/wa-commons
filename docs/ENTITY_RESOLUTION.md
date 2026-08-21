@@ -1,18 +1,20 @@
 # Entity Resolution for WA Commons
 
-Status: **M1 design decision, v0.1**
+Status: **M1.2 final decision — `wa-conservative-v0.2`**
 
-Related issue: #3
+Related issues: #13, #28
 
 ## Decision
 
-Use a **tiered entity-resolution pipeline** rather than one fuzzy matcher:
+WA Commons uses a **tiered entity-resolution pipeline** in which fuzzy matchers generate candidates but do not establish consequential identity facts by score alone.
 
-1. **Deterministic identifiers first** — LEI, corporate number, EDINET code, ISIN, ticker + exchange, or source-native IDs.
-2. **Normalize and model entities with FollowTheMoney-compatible concepts** where useful.
-3. **Use yente as the primary fuzzy/multi-attribute matching service** for records without a reliable exact identifier.
-4. **Require human review in the ambiguity band** and for consequential classifications.
-5. Keep **Splink/Dedupe as evaluation or batch-linkage alternatives**, not the first production dependency.
+1. **Deterministic strong identifiers first** — Japanese corporate number, LEI, EDINET code, JPX security code, and future source-native identifiers with explicit namespaces.
+2. **Explicit conflict checks** precede any automatic link.
+3. **yente 5.5.0 / logic-v2** is the primary fuzzy candidate-generation service for M1.
+4. **Splink 4.0.16 / DuckDB** remains an evaluation and batch-linkage signal.
+5. **`wa-conservative-v0.2` is the identity-decision policy.**
+6. Human review is required whenever no aligned strong identifier establishes identity.
+7. A later policy change requires a new version and must not silently rewrite historical decisions.
 
 The key principle is that entity resolution is itself evidence. A high-scoring name match must never silently become an identity fact.
 
@@ -26,17 +28,96 @@ WA Commons may join records such as:
 - a parent/subsidiary name in an international dataset;
 - an English transliteration used by an NGO or intergovernmental report.
 
-A false match can wrongly attribute military activity, political finance, or a human-rights allegation to the wrong company. Therefore the cost of false positives is unusually high.
+A false match can wrongly attribute military activity, political finance, or a human-rights allegation to the wrong company. Therefore false-positive avoidance has priority over automatic-link recall.
 
-## Candidate comparison
+## Measured matcher decision
 
-| Candidate | Role | License / data caveat | Strengths | Weaknesses | WA Commons decision |
-|---|---|---|---|---|---|
-| **OpenSanctions yente** | Entity matching API | Software is MIT; OpenSanctions dataset has separate non-commercial/commercial terms | Query-by-example; multi-attribute matching; built for people/companies; self-hostable; active project; integrates with FollowTheMoney | Matching quality depends on available descriptors; hosted OpenSanctions data/API licensing is separate from code | **ADOPT for v0 matcher**, using our own/compatible datasets where needed |
-| **FollowTheMoney** | Entity + relationship data model/toolkit | MIT software | Rich company/person/ownership/relationship model; lineage-oriented ecosystem; pairs naturally with yente | More expressive than the minimal WA schema; adopting it wholesale could overcomplicate M1 | **ADOPT concepts / adapter**, do not replace WA evidence schema |
-| **Splink** | Probabilistic record linkage | OSS; verify exact current package/license before production pin | Strong for large batch linkage, explainable comparison weights, scalable backends | More tuning/data-engineering overhead; not specifically a screening API | **WATCH / benchmark** for batch Japanese datasets |
-| **Dedupe** | Active-learning entity resolution | MIT software | Mature deduplication/linkage patterns; trainable | Interactive/training workflow adds operational burden; not a ready-made evidence graph | **WATCH / benchmark** |
-| Custom name matcher | Bespoke | Our code | Full control | Reinvents normalization, scoring, review workflows; high false-positive risk | **REJECT for M1** |
+The M1.2 labeled corpus contains 420 cases: 400 synthetic adversarial cases and 20 source-verified Japanese cases.
+
+| Component | Measured behavior | M1 role |
+| --- | --- | --- |
+| `wa-conservative-v0.2` | 0 benchmark false-positive AUTO_LINKs; 60.63% automatic-link recall; high review burden | **Identity decision policy** |
+| yente `5.5.0`, `logic-v2` | At descriptive 0.70: 75.12% precision / 60.63% recall / 46.36% FPR overall; 80% / 100% / 10% on sourced subset | **Primary fuzzy candidate generator; score never auto-links** |
+| Splink `4.0.16`, DuckDB | At descriptive 0.50: 100% precision / 40.16% recall / 0% FPR overall; sparse training left some comparison levels on defaults | **Secondary/batch signal; score never auto-links** |
+
+Full measurements and limitations are in:
+
+- `docs/results/M1_YENTE_BENCHMARK_V01.md`;
+- `docs/results/M1_SPLINK_BENCHMARK_V01.md`;
+- `docs/results/M1_2_FINAL_ENTITY_RESOLUTION_DECISION.md`.
+
+## Final M1 resolution algorithm
+
+```text
+source record
+   ↓
+normalize strings / preserve identifier namespaces
+   ↓
+compare strong identifiers
+   ├─ any observed strong-ID conflict → DISPUTED → human review
+   ├─ one or more strong IDs align, no conflict → AUTO_LINK
+   └─ no aligned strong ID
+        ↓
+   fuzzy candidate generation / attribute comparison
+        ├─ yente >= 0.70 → REVIEW candidate
+        ├─ Splink >= 0.50 → REVIEW candidate
+        ├─ plausible name/address evidence → REVIEW
+        └─ insufficient evidence → NON_MATCH
+```
+
+Fuzzy routing points are matcher-specific measurement points, not shared probabilities and not production identity thresholds.
+
+## Hard safety invariants
+
+- **Name-only consequential matches never AUTO_LINK.**
+- An AUTO_LINK in M1 requires at least one aligned strong identifier and no conflicting strong identifier.
+- A conflicting Japanese corporate number, LEI, EDINET code, or JPX security code forces `DISPUTED` / manual review.
+- A yente or Splink score can never override a strong-ID conflict.
+- Parent and subsidiary entities remain distinct; relationship similarity does not collapse identity.
+- AUTO_LINK does not imply automatic publication of a consequential downstream claim.
+
+## Calibrated review-routing points
+
+### yente
+
+Pinned configuration:
+
+- version: `5.5.0`;
+- algorithm: `logic-v2`;
+- local WA dataset for the benchmark;
+- review-routing point: `0.70`.
+
+The sourced benchmark showed one false positive at score `0.8` while all four documented historical-continuity positives scored `0.85`. Raising the score to `0.90` removed the false positive but also removed every known positive. Therefore yente has no accepted score-only AUTO_LINK threshold in M1. The `0.70` point is used only to surface review candidates.
+
+### Splink
+
+Pinned configuration:
+
+- version: `4.0.16`;
+- DuckDB backend;
+- `link_only`;
+- M1.2c unsupervised parameter-estimation configuration;
+- review-routing point: `0.50`.
+
+At `0.50`, the sourced subset had 100% precision and 50% recall; at `0.70` and above none of the four sourced continuity positives were recovered. The CI run also observed untrained comparison levels that used defaults. Splink therefore remains review/batch evidence rather than an identity authority in M1.
+
+## Final policy benchmark outcome
+
+`wa-conservative-v0.2` deliberately sends no-ID name/address matches to review instead of auto-linking them.
+
+Combined 420 cases:
+
+- TP 154;
+- FP 0;
+- FN 100;
+- TN 166;
+- precision 100%;
+- recall 60.63%;
+- false-positive rate 0%;
+- REVIEW 206 / 420 = 49.05%;
+- DISPUTED 60 / 420 = 14.29%.
+
+The review burden is intentionally high for M1. Reducing it requires new independently sourced labeled data and a new versioned policy, not an undocumented threshold change.
 
 ## Required identity fields
 
@@ -51,92 +132,30 @@ Every entity should support, where available:
 - Japanese corporate number;
 - EDINET code;
 - ISIN;
-- exchange + ticker;
+- exchange + ticker/security code;
 - source-native IDs;
 - parent/subsidiary relationships with dates.
 
 Names are never sufficient when a stronger identifier is available.
 
-## Resolution algorithm v0
-
-```text
-source record
-   ↓
-normalize strings/identifiers
-   ↓
-exact identifier match?
-   ├─ yes → deterministic match (confidence 1.0 unless identifier conflict)
-   └─ no
-       ↓
-construct multi-attribute query
-       ↓
-      yente
-       ↓
-score + conflicting-attribute checks
-       ↓
- ┌──────────────┬───────────────────────┬────────────────┐
- │ high + clean │ ambiguity band        │ low/conflicting│
- │ auto-link*   │ human review required │ unresolved     │
- └──────────────┴───────────────────────┴────────────────┘
-```
-
-`*` Auto-link does not imply auto-publication of a consequential claim. The downstream evidence rule can still require human review.
-
-## Initial conservative thresholds
-
-The exact score scale must be calibrated on a labeled test set; do not hard-code these numbers as universal truth.
-
-For the first evaluation corpus:
-
-- deterministic identifier: accept unless conflicting identifiers exist;
-- high fuzzy score with **at least two independent aligned attributes**: candidate for automatic link;
-- name-only match: never auto-link a consequential claim;
-- conflicting jurisdiction, corporate number, LEI, or address: force `disputed`/manual review;
-- parent and subsidiary: keep distinct entities; relationships must not collapse identity.
-
-## Japanese-specific test cases
-
-M1 evaluation must include:
-
-- 株式会社 prefix/suffix variation;
-- full-width / half-width characters;
-- old/new kanji and punctuation variation;
-- English legal name vs Japanese name;
-- common abbreviations;
-- holding company vs operating subsidiary;
-- mergers and historical names;
-- duplicate company names in different prefectures/jurisdictions;
-- ticker reuse or market changes;
-- transliteration ambiguity.
-
-## Evaluation set
-
-Before production use, build a labeled corpus with at least:
-
-- 100 easy exact matches;
-- 100 alias/transliteration matches;
-- 50 parent/subsidiary traps;
-- 50 same/similar-name non-matches;
-- 50 historical rename/merger cases;
-- 50 deliberately incomplete records.
-
-Report precision, recall, false-positive rate, and the size of the manual-review queue separately. For WA Commons, **false-positive precision is more important than maximizing automatic match rate**.
-
 ## Provenance requirement
 
 Every link stores:
 
-- matcher + version;
+- decision-policy version;
+- fuzzy matcher + version/config if used;
 - input fields;
 - candidate ID;
-- score/confidence;
-- matching attributes;
+- score/confidence signals;
+- aligned attributes;
 - conflicting attributes;
-- review status;
-- review timestamp/person if applicable.
+- decision/review status;
+- source provenance;
+- review timestamp/person if applicable;
+- correction history.
 
 A later matcher upgrade must not silently rewrite history. Reconciliation changes should create a correction record.
 
 ## Licensing rule
 
-Open-source software licensing and dataset licensing are separate questions. yente and FollowTheMoney being MIT does **not** make every dataset used with them unrestricted. Each source in `docs/SOURCE_REGISTRY.md` keeps its own license/terms status.
+Open-source software licensing and dataset licensing are separate questions. yente and FollowTheMoney being open-source does **not** make every dataset used with them unrestricted. Each source in `docs/SOURCE_REGISTRY.md` keeps its own license/terms status.
