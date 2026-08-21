@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime
 import hashlib
 import re
-from typing import Iterable
+
+from wa_commons.identity.benchmark import BenchmarkRecord
+from wa_commons.identity.policy import final_policy_match
 
 SOURCE_ID = "jp-political-finance"
 ADAPTER_VERSION = "0.1"
@@ -29,6 +30,7 @@ class PoliticalFinanceObservation:
     retrieved_at: str
     source_sha256: str
     donor_type: str = "organization_or_corporation"
+    corporate_number: str = ""
     identity_decision: str = "UNRESOLVED"
     entity_id: str | None = None
 
@@ -51,27 +53,103 @@ def source_url(part: int) -> str:
 
 
 def conservative_identity_resolution(donor_name: str, *, corporate_number: str | None = None) -> tuple[str, str | None]:
-    """M1 political-finance identity gate.
-
-    Filings normally print names/addresses, not strong identifiers. Name similarity
-    alone must never AUTO_LINK. A caller may supply a separately verified Japanese
-    corporate number; only then can M1 create a deterministic entity key.
-    """
+    """Route donor identity through the M1.2 policy; names alone never auto-link."""
     number = re.sub(r"\D", "", corporate_number or "")
-    if len(number) == 13:
-        return "AUTO_LINK", f"jp:corporate-number:{number}"
-    return "UNRESOLVED", None
+    if len(number) != 13:
+        return "UNRESOLVED", None
+    source = BenchmarkRecord(name=donor_name, corporate_number=number, jurisdiction="JP")
+    canonical = BenchmarkRecord(name=donor_name, corporate_number=number, jurisdiction="JP")
+    result = final_policy_match(source, canonical)
+    if result.decision != "AUTO_LINK":
+        return result.decision, None
+    return result.decision, f"jp:corporate-number:{number}"
+
+
+def _digits(text: str) -> str:
+    table = str.maketrans("０１２３４５６７８９", "0123456789")
+    return re.sub(r"\D", "", (text or "").translate(table))
+
+
+def parse_organization_ocr_page(text: str, *, part: int, page: int, retrieved_at: str, source_sha256: str) -> list[PoliticalFinanceObservation]:
+    """Parse conservative row candidates from a known section-2 filing page.
+
+    The caller must select pages independently verified to be section 2
+    (法人・その他の団体). We do not infer donor type from a name. OCR rows that
+    do not expose an amount plus 2023 month/day are rejected rather than guessed.
+    Slash-like continuation rows inherit only the immediately preceding donor.
+    """
+    observations: list[PoliticalFinanceObservation] = []
+    current_donor = ""
+    filing_id = ""
+    lines = [normalize_text(line) for line in (text or "").splitlines() if normalize_text(line)]
+    for line in lines:
+        m_filing = re.search(r"(\d{2}-2-\d{5})", line)
+        if m_filing:
+            filing_id = m_filing.group(1)
+        if "小計" in line or "合計" in line or "その他の寄附" in line or "その他の" in line and "寄" in line:
+            continue
+        parts = [normalize_text(p) for p in line.split("|")]
+        if len(parts) < 4:
+            continue
+        first = parts[0]
+        # Pull amount/year/month/day from the first numeric-looking cells after donor.
+        numeric = []
+        for cell in parts[1:7]:
+            d = _digits(cell)
+            if d:
+                numeric.append(d)
+        if len(numeric) < 4:
+            continue
+        # Locate a plausible Reiwa-5 date triple. Amount is the numeric field just before it.
+        date_at = None
+        for i in range(1, len(numeric) - 2):
+            if numeric[i] == "5" and 1 <= int(numeric[i + 1]) <= 12 and 1 <= int(numeric[i + 2]) <= 31:
+                date_at = i
+                break
+        if date_at is None:
+            continue
+        amount_digits = numeric[date_at - 1]
+        amount = int(amount_digits)
+        if amount <= 0:
+            continue
+        donor = first.strip(" /ヵカM7りルヶー_上")
+        continuation = not donor or donor in {"D", "MD", "M"}
+        if continuation:
+            donor = current_donor
+        else:
+            # Exclude obvious headings; exact organization status comes from the section.
+            if any(token in donor for token in ("寄附者", "十億", "年月", "その 7", "その_7")):
+                continue
+            current_donor = donor
+        if not donor:
+            continue
+        obs_key = hashlib.sha256(f"{part}|{page}|{len(observations)}|{donor}|{amount}".encode("utf-8")).hexdigest()[:16]
+        decision, entity_id = conservative_identity_resolution(donor)
+        observations.append(PoliticalFinanceObservation(
+            observation_id=f"wc:obs:political-finance:{obs_key}",
+            donor_name=donor,
+            recipient=RECIPIENT,
+            amount_jpy=amount,
+            reporting_year=REPORTING_YEAR,
+            filing_id=filing_id or f"part-{part:02d}-page-{page:03d}",
+            source_url=source_url(part),
+            source_locator=f"pdf_part={part};page={page}",
+            retrieved_at=retrieved_at,
+            source_sha256=source_sha256,
+            identity_decision=decision,
+            entity_id=entity_id,
+        ))
+    return observations
 
 
 def observation_to_claim(observation: PoliticalFinanceObservation) -> dict | None:
-    """Create a narrow donation fact only after strong-ID resolution.
-
-    A donation never implies endorsement of a recipient ideology or every policy,
-    and this adapter never creates PASS/WATCH/EXCLUDE.
-    """
+    """Create a narrow donation fact only after strong-ID resolution."""
     if observation.identity_decision != "AUTO_LINK" or not observation.entity_id:
         return None
     key = hashlib.sha256(observation.observation_id.encode("utf-8")).hexdigest()[:16]
+    identifiers = []
+    if observation.corporate_number:
+        identifiers.append({"scheme": "corporate_number", "value": observation.corporate_number, "issuer": "National Tax Agency, Japan"})
     return {
         "schema_version": "0.1",
         "claim_id": f"wc:claim:political-finance:{key}",
@@ -80,7 +158,7 @@ def observation_to_claim(observation: PoliticalFinanceObservation) -> dict | Non
             "entity_type": "company",
             "canonical_name": observation.donor_name,
             "jurisdiction": "JP",
-            "identifiers": [],
+            "identifiers": identifiers,
             "entity_resolution": {
                 "method": "deterministic_identifier",
                 "confidence": 1.0,
@@ -135,12 +213,3 @@ def observation_to_claim(observation: PoliticalFinanceObservation) -> dict | Non
             "dataset_version": SNAPSHOT_VERSION,
         },
     }
-
-
-def reject_personal_record(name: str) -> bool:
-    """M1 minimization helper: only explicit corporate/organizational rows belong here.
-
-    The extraction runner must positively identify the filing section as
-    法人その他の団体; names alone are never used to infer donor type.
-    """
-    return not bool(normalize_text(name))
