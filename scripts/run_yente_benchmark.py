@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from collections import defaultdict
@@ -20,8 +21,12 @@ def post_json(url: str, payload: dict) -> dict:
         headers={"Content-Type": "application/json", "Accept": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return json.load(resp)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return json.load(resp)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"yente HTTP {exc.code} for {url}: {body}") from exc
 
 
 def collect_scores(queries: list[dict]) -> list[dict]:
@@ -53,8 +58,6 @@ def metrics(rows: list[dict], threshold: float) -> dict:
     review = 0
     by_type = defaultdict(lambda: {"cases": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "auto_link": 0, "review": 0})
     for row in rows:
-        # Auto-link only the top result. For MATCH cases it must also be the labeled
-        # candidate. REVIEW is intentionally treated as non-auto-link ground truth.
         auto = row["top_id"] is not None and row["top_score"] >= threshold
         correct_auto = auto and row["expected"] == "MATCH" and row["top_id"] == row["expected_id"]
         positive = row["expected"] == "MATCH"
@@ -96,8 +99,6 @@ def choose_threshold(curve: list[dict]) -> dict:
     zero_fp = [m for m in curve if m["fp"] == 0]
     if not zero_fp:
         return max(curve, key=lambda m: (m["precision"], m["recall"], -m["threshold"]))
-    # Safety gate: zero false positives first. Within that set maximize recall;
-    # if tied, choose the lower threshold to avoid unnecessary review.
     return max(zero_fp, key=lambda m: (m["recall"], -m["threshold"]))
 
 
@@ -105,8 +106,6 @@ def main() -> None:
     queries = json.loads((OUT / "queries.json").read_text(encoding="utf-8"))
     rows = collect_scores(queries)
     observed = sorted({round(r["top_score"], 6) for r in rows} | {0.0, 1.0})
-    # Each observed score is a meaningful decision boundary; add a tiny epsilon
-    # above it so threshold transitions are represented without arbitrary grids.
     thresholds = sorted({0.0, 1.0} | set(observed) | {min(1.0, s + 1e-6) for s in observed})
     curve = [metrics(rows, t) for t in thresholds]
     chosen = choose_threshold(curve)
