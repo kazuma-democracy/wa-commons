@@ -1,0 +1,38 @@
+name: splink-benchmark
+
+on:
+  pull_request:
+    paths:
+      - "src/wa_commons/identity/**"
+      - "scripts/run_splink_benchmark.py"
+      - "tests/test_splink_benchmark_helpers.py"
+      - ".github/workflows/splink-benchmark.yml"
+      - "docs/results/M1_SPLINK_BENCHMARK_V01.md"
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install WA Commons and pinned Splink
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m pip install 'splink==4.0.16'
+      - name: Run unit tests
+        run: python -m pytest -q
+      - name: Run Splink benchmark
+        run: python scripts/run_splink_benchmark.py
+      - name: Print report
+        run: cat artifacts/splink-benchmark/splink-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splink-benchmark-v01
+          path: |
+            artifacts/splink-benchmark/splink-report.json
+            artifacts/splink-benchmark/splink-rows.json
+          retention-days: 30
