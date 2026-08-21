@@ -7,7 +7,7 @@ name = "wa-commons"
 version = "0.1.0"
 description = "WA Commons evidence and identity foundations"
 requires-python = ">=3.11"
-dependencies = ["openpyxl>=3.1", "xlrd>=2.0", "beautifulsoup4>=4.12"]
+dependencies = ["openpyxl>=3.1", "xlrd>=2.0"]
 
 [project.scripts]
 wa-commons = "wa_commons.cli:main"
