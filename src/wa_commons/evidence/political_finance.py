@@ -17,6 +17,8 @@ REPORTING_YEAR = 2023
 PUBLICATION_DATE = "2024-11-29"
 SNAPSHOT_VERSION = "soumu-SS20241129-kokumin-seiji-kyokai-r5"
 SOURCE_URL_TEMPLATE = "https://www.soumu.go.jp/senkyo/seiji_s/seijishikin/contents/SS20241129/006710_2150{part:02d}.pdf"
+MAX_TRANSACTION_AMOUNT_JPY = 1_000_000_000
+MAX_AMOUNT_DIGITS = len(str(MAX_TRANSACTION_AMOUNT_JPY))
 
 
 @dataclass(frozen=True)
@@ -120,8 +122,8 @@ def parse_organization_tsv_page(tsv: str, *, part: int, page: int, retrieved_at:
         for word in words:
             text = normalize_text(word.get("text", ""))
             left = int(word.get("left") or 0)
-            w = int(word.get("width") or 0)
-            center = (left + w / 2) / width
+            word_width = int(word.get("width") or 0)
+            center = (left + word_width / 2) / width
             if center < 0.275:
                 donor_words.append((left, text))
             elif 0.275 <= center < 0.385:
@@ -131,10 +133,13 @@ def parse_organization_tsv_page(tsv: str, *, part: int, page: int, retrieved_at:
         amount_raw = "".join(text for _, text in sorted(amount_words))
         donor = _clean_donor(donor_raw)
         amount_digits = _digits(amount_raw)
-        if not amount_digits:
+        # Fail closed on OCR/table artifacts. A real single transaction in this
+        # pilot cannot require an unbounded integer field; oversized digit runs
+        # indicate merged lines/graphics, not a recoverable amount.
+        if not amount_digits or len(amount_digits) > MAX_AMOUNT_DIGITS:
             continue
         amount = int(amount_digits)
-        if amount <= 0 or amount > 1_000_000_000:
+        if amount <= 0 or amount > MAX_TRANSACTION_AMOUNT_JPY:
             continue
 
         if any(token in donor for token in ("寄附", "合計", "小計", "その他", "十億", "百万", "千円", "年月")):
