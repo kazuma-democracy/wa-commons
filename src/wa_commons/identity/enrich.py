@@ -23,23 +23,39 @@ def read_csv_rows(path: str | Path, *, encoding: str = "utf-8-sig") -> list[dict
         return list(csv.DictReader(fh))
 
 
+def normalize_edinet_security_code(value: object) -> str:
+    """Map EDINET's five-digit numeric security code to JPX's four-digit code.
+
+    EDINET commonly stores a four-digit listed-company code with a terminal zero,
+    e.g. 72030 -> 7203. Alphanumeric codes and other shapes are preserved.
+    """
+    text = str(value).strip()
+    if text.endswith(".0"):
+        text = text[:-2]
+    if len(text) == 5 and text.isdigit() and text.endswith("0"):
+        text = text[:4]
+    return normalize_security_code(text)
+
+
 def build_edinet_security_index(rows: Iterable[Mapping[str, object]]) -> dict[str, Mapping[str, object]]:
     """Index EDINET code-list rows by security code.
 
     Security code is the bridge to the JPX issuer spine. Name similarity is deliberately
-    not used for automatic linking.
+    not used for automatic linking. Duplicate normalized codes are withheld from auto-linking.
     """
     out: dict[str, Mapping[str, object]] = {}
+    duplicates: set[str] = set()
     for row in rows:
         raw = _first(row, ("証券コード", "Security Code", "security_code"))
         if not raw:
             continue
-        code = normalize_security_code(raw)
+        code = normalize_edinet_security_code(raw)
         if code in out:
-            # Duplicate strong bridge is ambiguous; leave it absent so caller cannot auto-link.
-            out.pop(code, None)
-            continue
-        out[code] = row
+            duplicates.add(code)
+        else:
+            out[code] = row
+    for code in duplicates:
+        out.pop(code, None)
     return out
 
 
@@ -90,8 +106,8 @@ def validate_with_nta(
 def build_gleif_registration_index(rows: Iterable[Mapping[str, object]]) -> dict[str, Mapping[str, object]]:
     """Index GLEIF rows by registration-authority entity ID.
 
-    For Japanese entities this can be a Japanese corporate number. Only rows with one
-    unambiguous registration ID are used. Legal-name matching is not an auto-link path.
+    Automatic Japanese links require an exact registration ID. Legal-name matching is
+    never an automatic link path.
     """
     out: dict[str, Mapping[str, object]] = {}
     duplicates: set[str] = set()
