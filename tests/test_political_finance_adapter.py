@@ -53,6 +53,21 @@ def test_geometry_parser_uses_columns_and_carries_continuation():
     assert all(r.extraction_review_required for r in rows)
 
 
+def test_geometry_parser_rejects_merged_or_impossible_amount_cells():
+    tsv = _tsv(
+        (1, 210, 600, 150, 40, "株式会社正常"),
+        (1, 930, 600, 160, 40, "60000|"),
+        (2, 210, 700, 150, 40, "株式会社巨大ノイズ"),
+        (2, 930, 700, 180, 40, "12345678901234567890"),
+        (3, 210, 800, 150, 40, "株式会社上限超過"),
+        (3, 930, 800, 180, 40, "1000000001"),
+    )
+    rows = parse_organization_tsv_page(tsv, part=18, page=2, retrieved_at="2026-08-21T00:00:00Z", source_sha256="e" * 64)
+    assert len(rows) == 1
+    assert rows[0].donor_name == "株式会社正常"
+    assert rows[0].amount_jpy == 60000
+
+
 def test_unresolved_or_unreviewed_observation_cannot_become_claim():
     unresolved = PoliticalFinanceObservation(
         observation_id="wc:obs:test:1", donor_name="同名株式会社", recipient="一般財団法人国民政治協会",
