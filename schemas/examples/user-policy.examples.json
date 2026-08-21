@@ -1,0 +1,78 @@
+[
+  {
+    "schema_version": "0.1",
+    "profile_id": "example:strict-military-avoidance",
+    "profile_version": "1",
+    "title": "Strict military-specific activity avoidance",
+    "description": "Example profile that excludes confirmed military-specific activity while treating ambiguity as review material rather than guilt.",
+    "origin": {"kind": "example", "author": "WA Commons contributors", "official_status": "not_official", "forked_from": null},
+    "default_decision": "NONE",
+    "uncertainty": {"unknown": "WATCH", "disputed": "WATCH", "expired": "WATCH"},
+    "exclusions": [
+      {
+        "rule_id": "exclude-confirmed-military-specific",
+        "description": "Exclude confirmed claims that the contract subject itself is military-specific.",
+        "match": {"categories": ["military_contract"], "predicates": ["contract_subject_classification"]},
+        "condition": {"field": "claim.value.classification", "operator": "eq", "value": "MILITARY_SPECIFIC"},
+        "min_confidence": 0.8,
+        "decision": "EXCLUDE"
+      }
+    ],
+    "preferences": []
+  },
+  {
+    "schema_version": "0.1",
+    "profile_id": "example:controversial-weapons-only",
+    "profile_version": "1",
+    "title": "Narrow controversial-weapons focus",
+    "description": "Example profile illustrating that a user may ignore ordinary Ministry of Defense contracts and reserve exclusion for a narrower evidence category not yet populated in the M1 pilot.",
+    "origin": {"kind": "example", "author": "WA Commons contributors", "official_status": "not_official", "forked_from": null},
+    "default_decision": "NONE",
+    "uncertainty": {"unknown": "NONE", "disputed": "WATCH", "expired": "WATCH"},
+    "exclusions": [
+      {
+        "rule_id": "exclude-controversial-weapons",
+        "description": "Exclude only confirmed controversial-weapons involvement when such a narrow claim exists.",
+        "match": {"categories": ["controversial_weapons"]},
+        "min_confidence": 0.9,
+        "decision": "EXCLUDE"
+      }
+    ],
+    "preferences": []
+  },
+  {
+    "schema_version": "0.1",
+    "profile_id": "example:transparency-first",
+    "profile_version": "1",
+    "title": "Transparency-first informational profile",
+    "description": "Example profile that does not exclude military or political-finance evidence; it surfaces those claims for review and expresses a soft preference to avoid unresolved evidence in later portfolio construction.",
+    "origin": {"kind": "example", "author": "WA Commons contributors", "official_status": "not_official", "forked_from": null},
+    "default_decision": "NONE",
+    "uncertainty": {"unknown": "WATCH", "disputed": "WATCH", "expired": "WATCH"},
+    "exclusions": [
+      {
+        "rule_id": "watch-military-evidence",
+        "description": "Show confirmed military-contract evidence for review without excluding it.",
+        "match": {"categories": ["military_contract"]},
+        "min_confidence": 0.7,
+        "decision": "WATCH"
+      },
+      {
+        "rule_id": "watch-political-finance-evidence",
+        "description": "Show confirmed political-finance evidence for review without inferring ideology or excluding it.",
+        "match": {"categories": ["political_finance"]},
+        "min_confidence": 0.8,
+        "decision": "WATCH"
+      }
+    ],
+    "preferences": [
+      {
+        "rule_id": "soft-avoid-unresolved-human-rights",
+        "description": "Softly avoid unresolved human-rights evidence in future portfolio weighting; this is not an exclusion rule.",
+        "match": {"categories": ["human_rights"]},
+        "direction": "avoid",
+        "weight": 0.35
+      }
+    ]
+  }
+]
