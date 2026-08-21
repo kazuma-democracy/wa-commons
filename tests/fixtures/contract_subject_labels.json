@@ -1,0 +1,23 @@
+[
+  {"id":"mil-01","subject":"誘導弾の整備役務一式","expected":"MILITARY_SPECIFIC"},
+  {"id":"mil-02","subject":"小銃用部品一式","expected":"MILITARY_SPECIFIC"},
+  {"id":"mil-03","subject":"砲弾保管用器材一式","expected":"MILITARY_SPECIFIC"},
+  {"id":"mil-04","subject":"射撃統制装置の修理役務","expected":"MILITARY_SPECIFIC"},
+  {"id":"mil-05","subject":"戦車用専用部品一式","expected":"MILITARY_SPECIFIC"},
+  {"id":"civ-01","subject":"鉛筆 ＨＢ外２８５件（単価契約）一式","expected":"CIVILIAN"},
+  {"id":"civ-02","subject":"紙（ＰＰＣ用 Ａ４）外３件（単価契約）一式","expected":"CIVILIAN"},
+  {"id":"civ-03","subject":"記念館等空調設備補修役務一式","expected":"CIVILIAN"},
+  {"id":"civ-04","subject":"広報資料発送役務（単価契約）一式","expected":"CIVILIAN"},
+  {"id":"civ-05","subject":"自動車修理等役務（トヨタ車）（単価契約）一式","expected":"CIVILIAN"},
+  {"id":"civ-06","subject":"庁舎清掃役務一式","expected":"CIVILIAN"},
+  {"id":"dual-01","subject":"情報システム運用支援役務一式","expected":"DUAL_USE"},
+  {"id":"dual-02","subject":"ネットワーク機器保守役務一式","expected":"DUAL_USE"},
+  {"id":"dual-03","subject":"衛星通信関連機器一式","expected":"DUAL_USE"},
+  {"id":"dual-04","subject":"ドローン撮影システム一式","expected":"DUAL_USE"},
+  {"id":"dual-05","subject":"測定器校正役務一式","expected":"DUAL_USE"},
+  {"id":"unk-01","subject":"特殊役務一式","expected":"UNKNOWN"},
+  {"id":"unk-02","subject":"関連機器の保守一式","expected":"UNKNOWN"},
+  {"id":"unk-03","subject":"調査研究役務一式","expected":"UNKNOWN"},
+  {"id":"unk-04","subject":"小銃関連情報システム保守役務","expected":"UNKNOWN"},
+  {"id":"unk-05","subject":"鉛筆等を含む情報システム教育用教材一式","expected":"UNKNOWN"}
+]
