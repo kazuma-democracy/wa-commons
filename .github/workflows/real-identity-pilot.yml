@@ -1,0 +1,36 @@
+name: real-identity-pilot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/wa_commons/identity/**'
+      - 'scripts/run_real_identity_pilot.py'
+      - 'scripts/run_real_identity_pilot_fixed.py'
+      - 'pyproject.toml'
+      - '.github/workflows/real-identity-pilot.yml'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest -q
+      - name: Run official-data 100-company pilot
+        run: python scripts/run_real_identity_pilot_fixed.py artifacts/real-identity-pilot
+      - name: Print report
+        run: cat artifacts/real-identity-pilot/report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: real-identity-pilot
+          path: |
+            artifacts/real-identity-pilot/report.json
+            artifacts/real-identity-pilot/entities.json
+          retention-days: 30

@@ -32,10 +32,16 @@ Artifacts:
 - [x] FollowTheMoney-compatible modeling is selected as an interoperability target, not a replacement for the evidence schema.
 - [x] Name-only consequential matches are forbidden.
 - [x] Japanese-specific ambiguity cases are defined.
+- [x] M1.1 real 100-company identity spine implemented and reproduced twice.
+- [x] JPX → EDINET → corporate number → NTA exact-link chain demonstrated at 100/100 coverage in the pilot.
+- [x] GLEIF exact-ID enrichment demonstrated without making LEI presence mandatory.
 - [ ] Build labeled Japanese entity-resolution evaluation corpus.
 - [ ] Calibrate thresholds and publish precision/recall/false-positive metrics.
 
-Artifact: `docs/ENTITY_RESOLUTION.md`
+Artifacts:
+
+- `docs/ENTITY_RESOLUTION.md`
+- `docs/results/M1_IDENTITY_PILOT_2026-07-31.md`
 
 ### C. Source registry
 
@@ -44,8 +50,9 @@ Artifact: `docs/ENTITY_RESOLUTION.md`
 - [x] Each source records evidence scope and main limitations.
 - [x] License/terms uncertainty is explicit rather than guessed away.
 - [x] First integration order is defined.
-- [ ] Pin exact terms/license URLs for sources selected for ingestion.
-- [ ] Implement adapters for the first identity spine.
+- [x] First identity-spine adapters implemented for JPX, EDINET, NTA and GLEIF.
+- [x] Source hashes/identifiers are recorded in the real pilot result.
+- [ ] Pin exact terms/license URLs for each future evidence source selected for redistribution/ingestion.
 
 Artifact: `docs/SOURCE_REGISTRY.md`
 
@@ -57,22 +64,26 @@ Artifact: `docs/SOURCE_REGISTRY.md`
 - [x] Political/funder capture and coordinated challenge/report attacks are covered.
 - [x] Defamation, privacy, licensing and financial-automation risk are covered.
 - [x] M1 blockers and pre-real-money gates are explicit.
-- [ ] Convert high-priority threats into executable regression tests as adapters are implemented.
+- [x] Strong-ID conflicts automatically become `DISPUTED` in identity-layer regression tests.
+- [x] Name-only automatic linking is blocked by regression tests.
+- [ ] Convert evidence-adapter-specific high-priority threats into executable regression tests as adapters are implemented.
 
 Artifact: `docs/THREAT_MODEL.md`
 
-## M1 remaining implementation sequence
+## M1 implementation sequence
 
-### M1.1 — Identity spine
+### M1.1 — Identity spine — DONE
 
-Implement normalization and identity records using:
+Implemented and verified using:
 
 1. JPX listed-company metadata;
-2. Japanese corporate-number data;
-3. GLEIF LEI where available;
-4. EDINET filer identifiers.
+2. EDINET filer identifiers and submitter corporate numbers;
+3. Japanese Corporate Number Publication Site full data;
+4. GLEIF LEI where an exact Japanese registration ID exists.
 
-Output: versioned canonical entities with aliases and identifiers.
+Result: 100/100 pilot issuers received EDINET and corporate-number links; 100/100 corporate numbers were independently found in the NTA full dataset; 7 exact LEIs were attached; 0 entities were disputed or unresolved. Two executions produced the same semantic payload SHA-256.
+
+See `docs/results/M1_IDENTITY_PILOT_2026-07-31.md`.
 
 ### M1.2 — Entity matcher benchmark
 
@@ -139,5 +150,7 @@ M1 is complete when all of the following are true:
 5. correction/dispute/expiry behavior is demonstrated end-to-end;
 6. a third party can regenerate the same versioned evidence graph from documented inputs;
 7. threat-model blockers are enforced by tests or workflow gates.
+
+M1.1 is now complete. M1 overall remains open until M1.2–M1.7 satisfy the remaining exit conditions.
 
 Only then should WA Commons move the center of gravity to M2 user-policy evaluation and Peace Capital paper portfolios.
