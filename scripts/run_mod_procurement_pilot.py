@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 import urllib.request
 
+from jsonschema import Draft202012Validator
+
 from wa_commons.evidence.mod_procurement import SOURCE_URL, observation_to_claim, parse_workbook
 
 
@@ -14,6 +16,14 @@ def download(url: str, path: Path) -> None:
     with urllib.request.urlopen(request, timeout=180) as response, path.open("wb") as out:
         while chunk := response.read(1024 * 1024):
             out.write(chunk)
+
+
+def validate_claims(claims: list[dict]) -> None:
+    schema_path = Path("schemas/evidence-claim.v0.1.schema.json")
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema)
+    for claim in claims:
+        validator.validate(claim)
 
 
 def main(out_dir: str) -> None:
@@ -25,6 +35,7 @@ def main(out_dir: str) -> None:
     retrieved_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     observations = parse_workbook(snapshot, retrieved_at=retrieved_at)
     claims = [claim for obs in observations if (claim := observation_to_claim(obs)) is not None]
+    validate_claims(claims)
 
     report = {
         "source_url": SOURCE_URL,
@@ -33,6 +44,7 @@ def main(out_dir: str) -> None:
         "resolved_count": sum(obs.identity_decision == "AUTO_LINK" for obs in observations),
         "unresolved_count": sum(obs.identity_decision != "AUTO_LINK" for obs in observations),
         "claim_count": len(claims),
+        "schema_validated_claim_count": len(claims),
         "civilian_guard_examples": [
             obs.subject for obs in observations
             if any(token in obs.subject for token in ("鉛筆", "ＰＰＣ", "PPC", "空調", "発送", "自動車修理"))
