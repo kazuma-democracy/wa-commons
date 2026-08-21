@@ -1,0 +1,59 @@
+name: yente-benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/wa_commons/identity/**'
+      - 'scripts/export_yente_benchmark.py'
+      - 'scripts/run_yente_benchmark.py'
+      - 'configs/yente-benchmark-manifest.yml'
+      - 'docker-compose.yente-benchmark.yml'
+      - '.github/workflows/yente-benchmark.yml'
+      - 'docs/results/M1_YENTE_BENCHMARK_V01.md'
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest -q
+      - name: Export WA benchmark corpus
+        run: python scripts/export_yente_benchmark.py
+      - name: Start Elasticsearch
+        run: docker compose -f docker-compose.yente-benchmark.yml up -d index
+      - name: Reindex WA dataset in pinned yente
+        run: docker compose -f docker-compose.yente-benchmark.yml run --rm yente yente reindex --force
+      - name: Start yente API
+        run: docker compose -f docker-compose.yente-benchmark.yml up -d yente
+      - name: Wait for yente
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/healthz >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker compose -f docker-compose.yente-benchmark.yml logs
+          exit 1
+      - name: Run benchmark
+        run: python scripts/run_yente_benchmark.py
+      - name: Print report
+        run: cat artifacts/yente-benchmark/yente-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yente-benchmark-v01
+          path: |
+            artifacts/yente-benchmark/yente-report.json
+            artifacts/yente-benchmark/yente-rows.json
+            artifacts/yente-benchmark/queries.json
+            artifacts/yente-benchmark/candidates.ftm.json
+          retention-days: 30
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yente-benchmark.yml logs || true
