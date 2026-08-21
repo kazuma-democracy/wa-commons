@@ -99,9 +99,11 @@ def conservative_baseline(left: BenchmarkRecord, right: BenchmarkRecord) -> Matc
     if conflicts:
         return MatchResult("REVIEW", name_score, tuple(aligned), tuple(conflicts), "wa-conservative-v0.1")
 
-    # Consequential name-only links never auto-link. Two independent aligned
-    # attributes are required if no exact identifier exists.
-    if name_score >= 0.94 and len(set(aligned) - {"name"}) >= 1:
+    # Consequential name-only links never auto-link. A broad attribute such as
+    # jurisdiction is not enough corroboration: require a more entity-specific
+    # aligned attribute (address in v0.1) unless an exact strong ID already matched.
+    substantive_corroboration = "address" in aligned
+    if name_score >= 0.94 and substantive_corroboration:
         return MatchResult("AUTO_LINK", name_score, tuple(aligned), (), "wa-conservative-v0.1")
     if name_score >= 0.72:
         return MatchResult("REVIEW", name_score, tuple(aligned), (), "wa-conservative-v0.1")
