@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import json
-from dataclasses import asdict
 from pathlib import Path
 from typing import Iterable
 
@@ -18,20 +17,34 @@ def _read_csv(path: Path) -> list[dict[str, object]]:
         return list(csv.DictReader(fh))
 
 
+def _rows_from_matrix(values: list[list[object]]) -> list[dict[str, object]]:
+    if not values:
+        return []
+    headers = [str(v).strip() if v is not None else "" for v in values[0]]
+    return [
+        {headers[i]: row[i] for i in range(min(len(headers), len(row)))}
+        for row in values[1:]
+    ]
+
+
 def _read_xlsx(path: Path) -> list[dict[str, object]]:
     try:
         from openpyxl import load_workbook
-    except ImportError as exc:  # pragma: no cover - dependency guard
+    except ImportError as exc:  # pragma: no cover
         raise RuntimeError("openpyxl is required to read .xlsx files") from exc
-
     wb = load_workbook(path, read_only=True, data_only=True)
     ws = wb.active
-    rows = ws.iter_rows(values_only=True)
-    headers = [str(v).strip() if v is not None else "" for v in next(rows)]
-    out: list[dict[str, object]] = []
-    for values in rows:
-        out.append({headers[i]: values[i] for i in range(min(len(headers), len(values)))})
-    return out
+    return _rows_from_matrix([list(row) for row in ws.iter_rows(values_only=True)])
+
+
+def _read_xls(path: Path) -> list[dict[str, object]]:
+    try:
+        import xlrd
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("xlrd is required to read .xls files") from exc
+    book = xlrd.open_workbook(path)
+    sheet = book.sheet_by_index(0)
+    return _rows_from_matrix([sheet.row_values(i) for i in range(sheet.nrows)])
 
 
 def read_jpx_rows(path: str | Path) -> list[dict[str, object]]:
@@ -42,10 +55,7 @@ def read_jpx_rows(path: str | Path) -> list[dict[str, object]]:
     if suffix == ".xlsx":
         return _read_xlsx(path)
     if suffix == ".xls":
-        raise RuntimeError(
-            "Legacy .xls input must be converted to .xlsx or .csv before ingestion; "
-            "the conversion step must preserve the original source hash in the manifest."
-        )
+        return _read_xls(path)
     raise ValueError(f"unsupported JPX snapshot format: {suffix}")
 
 
@@ -80,7 +90,7 @@ def build_pilot(
         snapshot=snapshot,
         url=source_url,
         retrieved_at=retrieved_at,
-        adapter_version="0.2",
+        adapter_version="0.3",
     )
     entities: list[EntityRecord] = [from_jpx_row(row, source) for row in rows]
     return {
@@ -91,7 +101,7 @@ def build_pilot(
             "retrieved_at": retrieved_at,
             "source_file": path.name,
             "source_sha256": sha256_file(path),
-            "adapter_version": "0.2",
+            "adapter_version": "0.3",
             "selection": "sorted domestic listed equities by security code",
             "limit": limit,
             "entity_count": len(entities),
