@@ -79,16 +79,27 @@ See [`experiments/peace-capital/README.md`](experiments/peace-capital/README.md)
 
 ## Immediate development target
 
-The next milestone is **M1 — Reproducible Evidence Graph**.
+The current milestone is **M1 — Reproducible Evidence Graph**.
 
-Current priority issues:
+The bootstrap design package now includes:
 
-- **#2** minimal evidence schema;
-- **#3** reusable OSS for entity resolution;
-- **#4** public data-source registry;
-- **#7** threat model.
+- [`docs/EVIDENCE_MODEL.md`](docs/EVIDENCE_MODEL.md) — semantics: observation → claim → adjudication → user policy → action;
+- [`schemas/evidence-claim.v0.1.schema.json`](schemas/evidence-claim.v0.1.schema.json) — provenance-first evidence schema;
+- [`schemas/examples/evidence-claim.examples.json`](schemas/examples/evidence-claim.examples.json) — worked examples including a correction/dispute case;
+- [`docs/ENTITY_RESOLUTION.md`](docs/ENTITY_RESOLUTION.md) — deterministic-ID-first matching, yente selection, and Japanese ambiguity tests;
+- [`docs/SOURCE_REGISTRY.md`](docs/SOURCE_REGISTRY.md) — first source registry and integration order;
+- [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — false-attribution, capture, licensing, automation, and reputational-risk model;
+- [`docs/M1_ACCEPTANCE.md`](docs/M1_ACCEPTANCE.md) — acceptance checklist and remaining implementation sequence.
 
-Portfolio recommendation work is intentionally gated behind this evidence foundation.
+The next implementation work is intentionally narrow:
+
+1. build the Japanese identity spine (JPX + corporate number + LEI + EDINET identifiers);
+2. create a labeled Japanese entity-resolution benchmark;
+3. implement the first real evidence adapter for Ministry of Defense procurement;
+4. implement a political-finance evidence adapter;
+5. demonstrate correction, expiry, and deterministic reproduction end to end.
+
+Portfolio recommendation work remains gated behind this evidence foundation.
 
 ## The longer-term idea
 
