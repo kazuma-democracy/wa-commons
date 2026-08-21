@@ -1,0 +1,295 @@
+[
+  {
+    "schema_version": "0.1",
+    "claim_id": "wc:claim:example-mod-contract-001",
+    "subject": {
+      "entity_id": "wc:entity:example-a",
+      "entity_type": "company",
+      "canonical_name": "Example Company A",
+      "aliases": ["Example A Co., Ltd."],
+      "jurisdiction": "JP",
+      "identifiers": [
+        {"scheme": "source_native", "value": "EX-A-001", "issuer": "example-source"}
+      ],
+      "entity_resolution": {
+        "method": "deterministic_identifier",
+        "confidence": 1.0,
+        "review_status": "not_required",
+        "match_evidence": ["Exact source-native identifier match"]
+      }
+    },
+    "claim": {
+      "category": "military_contract",
+      "predicate": "was_awarded_contract_by",
+      "value": "Japan Ministry of Defense",
+      "unit": null,
+      "currency": null,
+      "scope": "published procurement record; contract subject must be evaluated separately",
+      "effective_from": "2026-04-01",
+      "effective_to": null
+    },
+    "evidence": [
+      {
+        "evidence_id": "wc:evidence:example-mod-contract-001",
+        "source_id": "jp-mod-procurement",
+        "source_url": "https://www.mod.go.jp/",
+        "archive_url": null,
+        "publisher": "Japan Ministry of Defense",
+        "source_type": "official_contract",
+        "publication_date": "2026-04-01",
+        "evidence_date": "2026-04-01",
+        "retrieved_at": "2026-08-21T05:10:00Z",
+        "support": "supports",
+        "locator": "Worked example only; replace with exact contract record locator in production",
+        "content_sha256": null,
+        "license_status": "review_required",
+        "notes": "A defense-ministry contract alone does not establish weapons activity. Contract subject and use are separate claims."
+      }
+    ],
+    "adjudication": {
+      "status": "confirmed",
+      "confidence": 0.99,
+      "reasoning_summary": "The worked example demonstrates confirmation of the narrow factual claim that a contract was awarded. It intentionally does not infer that the company is a weapons producer.",
+      "method": {"type": "deterministic_rule", "version": "example-0.1", "model": null},
+      "rule_set_version": "evidence-rules-0.1",
+      "decided_at": "2026-08-21T05:11:00Z",
+      "reviewer": null
+    },
+    "policy_context": null,
+    "correction_history": [],
+    "provenance": {
+      "created_at": "2026-08-21T05:11:00Z",
+      "updated_at": "2026-08-21T05:11:00Z",
+      "created_by": "wa-commons-bootstrap",
+      "dataset_version": "examples-0.1"
+    }
+  },
+  {
+    "schema_version": "0.1",
+    "claim_id": "wc:claim:example-political-donation-001",
+    "subject": {
+      "entity_id": "wc:entity:example-b",
+      "entity_type": "company",
+      "canonical_name": "Example Company B",
+      "aliases": [],
+      "jurisdiction": "JP",
+      "identifiers": [],
+      "entity_resolution": {
+        "method": "manual",
+        "confidence": 0.92,
+        "review_status": "human_reviewed",
+        "match_evidence": ["Name, address, and disclosed corporate identity aligned"]
+      }
+    },
+    "claim": {
+      "category": "political_finance",
+      "predicate": "made_reported_donation_to",
+      "value": "Example Political Fund",
+      "unit": "JPY",
+      "currency": "JPY",
+      "scope": "reported political-finance disclosure",
+      "effective_from": "2025-01-01",
+      "effective_to": "2025-12-31"
+    },
+    "evidence": [
+      {
+        "evidence_id": "wc:evidence:example-political-donation-001",
+        "source_id": "jp-political-finance-report",
+        "source_url": "https://www.soumu.go.jp/",
+        "archive_url": null,
+        "publisher": "Ministry of Internal Affairs and Communications, Japan",
+        "source_type": "official_filing",
+        "publication_date": null,
+        "evidence_date": "2025-12-31",
+        "retrieved_at": "2026-08-21T05:12:00Z",
+        "support": "supports",
+        "locator": "Worked example only; production record must include exact filing/page/row locator",
+        "content_sha256": null,
+        "license_status": "review_required",
+        "notes": "Do not infer political alignment beyond the disclosed transaction itself."
+      }
+    ],
+    "adjudication": {
+      "status": "confirmed",
+      "confidence": 0.92,
+      "reasoning_summary": "The narrow claim is the existence of a reported donation, not endorsement of every policy of the recipient.",
+      "method": {"type": "manual_review", "version": "example-0.1", "model": null},
+      "rule_set_version": "evidence-rules-0.1",
+      "decided_at": "2026-08-21T05:13:00Z",
+      "reviewer": "example-reviewer"
+    },
+    "policy_context": {
+      "policy_profile_id": "example:no-corporate-political-donations",
+      "policy_profile_version": "1",
+      "decision": "EXCLUDE",
+      "decision_reason": "This example policy excludes any company with a confirmed corporate political donation in the configured lookback window."
+    },
+    "correction_history": [],
+    "provenance": {
+      "created_at": "2026-08-21T05:13:00Z",
+      "updated_at": "2026-08-21T05:13:00Z",
+      "created_by": "wa-commons-bootstrap",
+      "dataset_version": "examples-0.1"
+    }
+  },
+  {
+    "schema_version": "0.1",
+    "claim_id": "wc:claim:example-human-rights-001",
+    "subject": {
+      "entity_id": "wc:entity:example-c",
+      "entity_type": "company",
+      "canonical_name": "Example Company C",
+      "aliases": ["Example C Holdings"],
+      "jurisdiction": "US",
+      "identifiers": [],
+      "entity_resolution": {
+        "method": "yente",
+        "confidence": 0.78,
+        "review_status": "machine_only",
+        "match_evidence": ["Name similarity", "jurisdiction alignment"]
+      }
+    },
+    "claim": {
+      "category": "human_rights",
+      "predicate": "was_named_in_public_allegation",
+      "value": "alleged adverse human-rights impact",
+      "unit": null,
+      "currency": null,
+      "scope": "allegation only; no finding of fact encoded",
+      "effective_from": null,
+      "effective_to": null
+    },
+    "evidence": [
+      {
+        "evidence_id": "wc:evidence:example-human-rights-001",
+        "source_id": "example-civil-society-report",
+        "source_url": "https://example.org/report",
+        "archive_url": null,
+        "publisher": "Example Civil Society Organization",
+        "source_type": "civil_society_report",
+        "publication_date": "2026-06-01",
+        "evidence_date": "2026-06-01",
+        "retrieved_at": "2026-08-21T05:14:00Z",
+        "support": "supports",
+        "locator": "Worked example",
+        "content_sha256": null,
+        "license_status": "unknown",
+        "notes": "The source supports only that an allegation was made. It does not establish the underlying allegation as true."
+      }
+    ],
+    "adjudication": {
+      "status": "unknown",
+      "confidence": 0.45,
+      "reasoning_summary": "The named-entity match is not yet human-reviewed and the evidence is an allegation rather than an official finding. The stronger underlying claim remains unknown.",
+      "method": {"type": "model_assisted", "version": "example-0.1", "model": "unspecified-example"},
+      "rule_set_version": "evidence-rules-0.1",
+      "decided_at": "2026-08-21T05:15:00Z",
+      "reviewer": null
+    },
+    "policy_context": {
+      "policy_profile_id": "example:conservative-evidence-threshold",
+      "policy_profile_version": "1",
+      "decision": "WATCH",
+      "decision_reason": "This example policy does not exclude on unresolved allegations."
+    },
+    "correction_history": [],
+    "provenance": {
+      "created_at": "2026-08-21T05:15:00Z",
+      "updated_at": "2026-08-21T05:15:00Z",
+      "created_by": "wa-commons-bootstrap",
+      "dataset_version": "examples-0.1"
+    }
+  },
+  {
+    "schema_version": "0.1",
+    "claim_id": "wc:claim:example-correction-001",
+    "subject": {
+      "entity_id": "wc:entity:example-d",
+      "entity_type": "company",
+      "canonical_name": "Example Company D",
+      "aliases": ["Example D"],
+      "jurisdiction": "JP",
+      "identifiers": [],
+      "entity_resolution": {
+        "method": "manual",
+        "confidence": 0.41,
+        "review_status": "disputed",
+        "match_evidence": ["Initial name-only match was later contradicted by address and corporate-number evidence"]
+      }
+    },
+    "claim": {
+      "category": "political_finance",
+      "predicate": "made_reported_donation_to",
+      "value": "Example Political Fund",
+      "unit": "JPY",
+      "currency": "JPY",
+      "scope": "identity correction example",
+      "effective_from": "2025-01-01",
+      "effective_to": "2025-12-31"
+    },
+    "evidence": [
+      {
+        "evidence_id": "wc:evidence:example-correction-original",
+        "source_id": "jp-political-finance-report",
+        "source_url": "https://www.soumu.go.jp/",
+        "archive_url": null,
+        "publisher": "Ministry of Internal Affairs and Communications, Japan",
+        "source_type": "official_filing",
+        "publication_date": null,
+        "evidence_date": "2025-12-31",
+        "retrieved_at": "2026-08-21T05:16:00Z",
+        "support": "context_only",
+        "locator": "Worked correction example",
+        "content_sha256": null,
+        "license_status": "review_required",
+        "notes": "The donation record exists, but later review showed it referred to a different similarly named entity."
+      },
+      {
+        "evidence_id": "wc:evidence:example-correction-contradiction",
+        "source_id": "jp-corporate-registry-example",
+        "source_url": "https://www.houjin-bangou.nta.go.jp/",
+        "archive_url": null,
+        "publisher": "National Tax Agency, Japan",
+        "source_type": "official_registry",
+        "publication_date": null,
+        "evidence_date": "2026-08-21",
+        "retrieved_at": "2026-08-21T05:17:00Z",
+        "support": "contradicts",
+        "locator": "Worked correction example",
+        "content_sha256": null,
+        "license_status": "review_required",
+        "notes": "Corporate-number and address evidence show the donor was a different entity."
+      }
+    ],
+    "adjudication": {
+      "status": "disputed",
+      "confidence": 0.95,
+      "reasoning_summary": "The original name-only entity resolution was unsafe. The transaction should not be attributed to Example Company D pending exact-identifier confirmation.",
+      "method": {"type": "mixed", "version": "example-0.1", "model": null},
+      "rule_set_version": "evidence-rules-0.1",
+      "decided_at": "2026-08-21T05:18:00Z",
+      "reviewer": "example-reviewer"
+    },
+    "policy_context": {
+      "policy_profile_id": "example:no-corporate-political-donations",
+      "policy_profile_version": "1",
+      "decision": "NONE",
+      "decision_reason": "A disputed attribution must not trigger exclusion under this example policy."
+    },
+    "correction_history": [
+      {
+        "changed_at": "2026-08-21T05:18:00Z",
+        "previous_status": "confirmed",
+        "new_status": "disputed",
+        "reason": "Manual review found that the initial name-only match conflated two companies.",
+        "evidence_refs": ["wc:evidence:example-correction-contradiction"]
+      }
+    ],
+    "provenance": {
+      "created_at": "2026-08-21T05:16:00Z",
+      "updated_at": "2026-08-21T05:18:00Z",
+      "created_by": "wa-commons-bootstrap",
+      "dataset_version": "examples-0.1"
+    }
+  }
+]
