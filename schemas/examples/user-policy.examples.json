@@ -13,7 +13,7 @@
         "rule_id": "exclude-confirmed-military-specific",
         "description": "Exclude confirmed claims that the contract subject itself is military-specific.",
         "match": {"categories": ["military_contract"], "predicates": ["contract_subject_classification"]},
-        "condition": {"field": "claim.value.classification", "operator": "eq", "value": "MILITARY_SPECIFIC"},
+        "condition": {"field": "claim.value.classification", "operator": "eq", "value": "military_specific"},
         "min_confidence": 0.8,
         "decision": "EXCLUDE"
       }
