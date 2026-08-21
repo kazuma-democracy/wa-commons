@@ -24,25 +24,21 @@ def read_csv_rows(path: str | Path, *, encoding: str = "utf-8-sig") -> list[dict
 
 
 def normalize_edinet_security_code(value: object) -> str:
-    """Map EDINET's five-digit numeric security code to JPX's four-digit code.
+    """Map EDINET's five-character security code to JPX's four-character issuer code.
 
-    EDINET commonly stores a four-digit listed-company code with a terminal zero,
-    e.g. 72030 -> 7203. Alphanumeric codes and other shapes are preserved.
+    The Japanese securities-code system appends a one-character security-type reserve
+    code to the four-character issuer code. Ordinary shares use terminal ``0``.
+    Examples: 72030 -> 7203 and 130A0 -> 130A.
     """
-    text = str(value).strip()
+    text = str(value).strip().upper()
     if text.endswith(".0"):
         text = text[:-2]
-    if len(text) == 5 and text.isdigit() and text.endswith("0"):
+    if len(text) == 5 and text.endswith("0") and text[:4].isalnum():
         text = text[:4]
     return normalize_security_code(text)
 
 
 def build_edinet_security_index(rows: Iterable[Mapping[str, object]]) -> dict[str, Mapping[str, object]]:
-    """Index EDINET code-list rows by security code.
-
-    Security code is the bridge to the JPX issuer spine. Name similarity is deliberately
-    not used for automatic linking. Duplicate normalized codes are withheld from auto-linking.
-    """
     out: dict[str, Mapping[str, object]] = {}
     duplicates: set[str] = set()
     for row in rows:
@@ -59,17 +55,10 @@ def build_edinet_security_index(rows: Iterable[Mapping[str, object]]) -> dict[st
     return out
 
 
-def enrich_from_edinet(
-    entity: EntityRecord,
-    edinet_row: Mapping[str, object],
-    source: SourceRef,
-) -> EntityRecord:
+def enrich_from_edinet(entity: EntityRecord, edinet_row: Mapping[str, object], source: SourceRef) -> EntityRecord:
     incoming: list[Identifier] = []
     edinet_code = _first(edinet_row, ("ＥＤＩＮＥＴコード", "EDINETコード", "EDINET Code", "edinet_code"))
-    corporate_number = _first(
-        edinet_row,
-        ("提出者法人番号", "法人番号", "Corporate Number", "corporate_number"),
-    )
+    corporate_number = _first(edinet_row, ("提出者法人番号", "法人番号", "Corporate Number", "corporate_number"))
     if edinet_code:
         incoming.append(Identifier("EDINET_CODE", edinet_code, source))
     if corporate_number:
@@ -86,11 +75,7 @@ def build_nta_corporate_index(rows: Iterable[Mapping[str, object]]) -> dict[str,
     return out
 
 
-def validate_with_nta(
-    entity: EntityRecord,
-    nta_row: Mapping[str, object],
-    source: SourceRef,
-) -> EntityRecord:
+def validate_with_nta(entity: EntityRecord, nta_row: Mapping[str, object], source: SourceRef) -> EntityRecord:
     number = _first(nta_row, ("法人番号", "corporateNumber", "corporate_number"))
     if not number:
         return entity
@@ -107,22 +92,10 @@ def validate_with_nta(
 
 
 def build_gleif_registration_index(rows: Iterable[Mapping[str, object]]) -> dict[str, Mapping[str, object]]:
-    """Index GLEIF rows by registration-authority entity ID.
-
-    Automatic Japanese links require an exact registration ID. Legal-name matching is
-    never an automatic link path.
-    """
     out: dict[str, Mapping[str, object]] = {}
     duplicates: set[str] = set()
     for row in rows:
-        reg_id = _first(
-            row,
-            (
-                "Entity.RegistrationAuthority.RegistrationAuthorityEntityID",
-                "registration_authority_entity_id",
-                "registrationAuthorityEntityId",
-            ),
-        )
+        reg_id = _first(row, ("Entity.RegistrationAuthority.RegistrationAuthorityEntityID", "registration_authority_entity_id", "registrationAuthorityEntityId"))
         if not reg_id:
             continue
         if reg_id in out:
@@ -134,11 +107,7 @@ def build_gleif_registration_index(rows: Iterable[Mapping[str, object]]) -> dict
     return out
 
 
-def enrich_from_gleif(
-    entity: EntityRecord,
-    gleif_row: Mapping[str, object],
-    source: SourceRef,
-) -> EntityRecord:
+def enrich_from_gleif(entity: EntityRecord, gleif_row: Mapping[str, object], source: SourceRef) -> EntityRecord:
     lei = _first(gleif_row, ("LEI", "lei"))
     if not lei:
         return entity
