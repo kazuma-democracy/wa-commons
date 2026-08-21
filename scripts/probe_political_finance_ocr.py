@@ -15,9 +15,10 @@ def main() -> None:
     req = urllib.request.Request(source_url(1), headers={"User-Agent": "wa-commons-m1/0.1"})
     with urllib.request.urlopen(req, timeout=30) as r:
         pdf.write_bytes(r.read())
-    # Bound the experiment: only pages 3-12 of part 1, 150 dpi grayscale.
+    # Bound the experiment: inspect only the end of part 1 to locate the
+    # transition from individual donors to organizations/corporations.
     prefix = out / "page"
-    subprocess.run(["pdftoppm", "-f", "3", "-l", "12", "-r", "150", "-gray", "-png", str(pdf), str(prefix)], check=True)
+    subprocess.run(["pdftoppm", "-f", "95", "-l", "112", "-r", "150", "-gray", "-png", str(pdf), str(prefix)], check=True)
     rows = []
     for image in sorted(out.glob("page-*.png")):
         proc = subprocess.run(["tesseract", str(image), "stdout", "-l", "jpn", "--psm", "6"], check=True, text=True, capture_output=True)
