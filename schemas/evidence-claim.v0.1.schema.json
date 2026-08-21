@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wa-commons.example/schemas/evidence-claim.v0.1.schema.json",
+  "title": "WA Commons EvidenceClaim v0.1",
+  "description": "A provenance-first factual claim about an entity. Evidence and adjudication are kept separate from user policy and action authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "claim_id",
+    "subject",
+    "claim",
+    "evidence",
+    "adjudication",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "claim_id": {
+      "type": "string",
+      "pattern": "^wc:claim:[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_id", "entity_type", "canonical_name"],
+      "properties": {
+        "entity_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 256
+        },
+        "entity_type": {
+          "enum": ["company", "organization", "person", "security", "other"]
+        },
+        "canonical_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "jurisdiction": {
+          "type": ["string", "null"]
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scheme", "value"],
+            "properties": {
+              "scheme": {
+                "enum": ["lei", "edinet", "ticker", "isin", "corporate_number", "source_native", "other"]
+              },
+              "value": {"type": "string", "minLength": 1},
+              "issuer": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "entity_resolution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "confidence", "review_status"],
+          "properties": {
+            "method": {
+              "enum": ["deterministic_identifier", "yente", "splink", "manual", "other"]
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "review_status": {
+              "enum": ["not_required", "machine_only", "human_reviewed", "disputed"]
+            },
+            "match_evidence": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "predicate", "value"],
+      "properties": {
+        "category": {
+          "enum": [
+            "military_contract",
+            "weapons_activity",
+            "military_revenue",
+            "political_finance",
+            "conflict_linked_activity",
+            "human_rights",
+            "supply_chain_risk",
+            "corporate_identity",
+            "ownership",
+            "positive_public_benefit",
+            "other"
+          ]
+        },
+        "predicate": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "value": {},
+        "unit": {"type": ["string", "null"]},
+        "currency": {"type": ["string", "null"]},
+        "scope": {"type": ["string", "null"]},
+        "effective_from": {"type": ["string", "null"], "format": "date"},
+        "effective_to": {"type": ["string", "null"], "format": "date"}
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "source_id",
+          "source_url",
+          "publisher",
+          "source_type",
+          "evidence_date",
+          "retrieved_at",
+          "support",
+          "locator",
+          "license_status"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "pattern": "^wc:evidence:[a-z0-9][a-z0-9._:-]{2,127}$"
+          },
+          "source_id": {"type": "string", "minLength": 2},
+          "source_url": {"type": "string", "format": "uri"},
+          "archive_url": {"type": ["string", "null"], "format": "uri"},
+          "publisher": {"type": "string", "minLength": 1},
+          "source_type": {
+            "enum": [
+              "official_registry",
+              "official_filing",
+              "official_contract",
+              "official_report",
+              "intergovernmental_report",
+              "company_disclosure",
+              "academic_research",
+              "civil_society_report",
+              "secondary_report",
+              "other"
+            ]
+          },
+          "publication_date": {"type": ["string", "null"], "format": "date"},
+          "evidence_date": {"type": "string", "format": "date"},
+          "retrieved_at": {"type": "string", "format": "date-time"},
+          "support": {"enum": ["supports", "contradicts", "context_only"]},
+          "locator": {"type": "string", "minLength": 1},
+          "content_sha256": {
+            "type": ["string", "null"],
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "license_status": {
+            "enum": ["confirmed_compatible", "review_required", "restricted", "unknown"]
+          },
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "adjudication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "confidence", "reasoning_summary", "method", "rule_set_version", "decided_at"],
+      "properties": {
+        "status": {
+          "enum": ["confirmed", "disputed", "unknown", "expired"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reasoning_summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "method": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "version"],
+          "properties": {
+            "type": {"enum": ["deterministic_rule", "manual_review", "model_assisted", "mixed"]},
+            "version": {"type": "string", "minLength": 1},
+            "model": {"type": ["string", "null"]}
+          }
+        },
+        "rule_set_version": {"type": "string", "minLength": 1},
+        "decided_at": {"type": "string", "format": "date-time"},
+        "reviewer": {"type": ["string", "null"]}
+      }
+    },
+    "policy_context": {
+      "description": "Optional downstream user policy evaluation. This does not change the factual evidence claim.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "policy_profile_id": {"type": "string"},
+        "policy_profile_version": {"type": "string"},
+        "decision": {"enum": ["PASS", "WATCH", "EXCLUDE", "NONE"]},
+        "decision_reason": {"type": ["string", "null"]}
+      }
+    },
+    "correction_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["changed_at", "reason"],
+        "properties": {
+          "changed_at": {"type": "string", "format": "date-time"},
+          "previous_status": {"type": ["string", "null"]},
+          "new_status": {"type": ["string", "null"]},
+          "reason": {"type": "string", "minLength": 1},
+          "evidence_refs": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_at", "updated_at", "created_by", "dataset_version"],
+      "properties": {
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "created_by": {"type": "string", "minLength": 1},
+        "dataset_version": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
