@@ -1,6 +1,6 @@
 # M1.3 Ministry of Defense Procurement Adapter v0.1
 
-Status: **implementation candidate; CI must verify the fixed official snapshot before issue #14 closes**.
+Status: **PASS — fixed official snapshot parsed and validated in GitHub Actions on 2026-08-21**.
 
 Related issue: #14.
 
@@ -18,7 +18,24 @@ Pinned source file:
 
 Snapshot ID: `fy2026-04-buppin-competitive`.
 
-The corresponding official PDF is the April FY2026 disclosure for competitive procurement of goods/services. It contains source-published Japanese corporate numbers, contract dates, supplier names/addresses, planned prices, contract amounts and exact subject text.
+Measured source SHA-256:
+
+`c1f37e838d66ffa7bc62c35c5d8830c75ed7b92b0befe0c380f0d79052c773e8`
+
+The corresponding official PDF is the April FY2026 disclosure for competitive procurement of goods/services. The source contains Japanese corporate numbers, contract dates, supplier names/addresses, planned prices, contract amounts and exact subject text.
+
+## Measured run
+
+GitHub Actions run `32484157919` successfully downloaded and parsed the pinned official XLSX.
+
+- real contract observations: **88**
+- identity `AUTO_LINK`: **86**
+- unresolved observations: **2**
+- generated EvidenceClaims: **86**
+- EvidenceClaims validated against the canonical v0.1 schema: **86 / 86**
+- targeted adapter tests: **4 / 4 passed**
+
+The two unresolved observations remain in the observation output and do not become confirmed claims.
 
 ## Safety semantics
 
@@ -28,7 +45,16 @@ This adapter implements one narrow proposition only:
 
 A MOD contract is **not** converted into `weapons_activity`, `military_specific`, `EXCLUDE`, or any other policy result.
 
-The exact contract subject is preserved verbatim for the separate M1.4 subject-semantics task. This is important because the fixed snapshot contains clearly ordinary procurement such as pencils, PPC paper, air-conditioning repair, document shipping and automobile repair alongside other MOD work.
+The exact contract subject is preserved verbatim for the separate M1.4 subject-semantics task. The real fixed snapshot itself proves why this separation is necessary. Civilian guard examples detected in the measured run include:
+
+- `鉛筆 ＨＢ外２８５件（単価契約）一式`
+- `紙（ＰＰＣ用 Ａ４）外３件（単価契約）一式`
+- `記念館等空調設備補修役務一式`
+- `広報資料発送役務（単価契約）一式`
+- `自動車修理等役務（トヨタ車）（単価契約）一式`
+- `自動車修理等役務（日産車）（単価契約）一式`
+
+These records remain ordinary `military_contract` observations at this layer; the adapter does not infer weapons activity from the contracting authority.
 
 ## Identity resolution
 
@@ -59,6 +85,8 @@ Each parsed observation retains:
 - adapter and snapshot versions;
 - identity decision and resolved entity ID when applicable.
 
+Canonical claim/evidence IDs use a deterministic SHA-256-derived ASCII key, while the human-readable Japanese sheet/row locator is preserved separately in evidence provenance.
+
 ## Observation → EvidenceClaim transformation
 
 Only `AUTO_LINK` observations become claims.
@@ -73,17 +101,19 @@ The claim uses:
 - exact subject text inside the claim value;
 - `license_status=review_required` pending a separate redistribution-rights determination.
 
-Tests validate the generated object against `schemas/evidence-claim.v0.1.schema.json`.
+The CI runner validates **every real generated claim**, not only the fixture, against `schemas/evidence-claim.v0.1.schema.json`.
 
-## Acceptance gate
+## Acceptance result
 
-`.github/workflows/mod-procurement-pilot.yml` downloads the fixed official XLSX, runs the targeted adapter tests, parses the real snapshot, and requires:
+Issue #14 acceptance is satisfied by the measured run:
 
-- at least 50 real contract observations;
-- at least one resolved EvidenceClaim;
-- preservation of at least one clearly civilian subject;
-- name-only fixture remains unresolved;
-- civilian fixture remains a `military_contract` fact and never becomes `weapons_activity`;
-- generated claims validate against the canonical EvidenceClaim schema.
+- >=50 real records: **PASS (88)**;
+- entity resolution through the M1 identity layer: **PASS**;
+- ambiguous/failed identity remains unresolved: **PASS (2 retained unresolved)**;
+- no contract → `EXCLUDE` or contract → `weapons_activity` inference: **PASS**;
+- clearly civilian procurement regression coverage: **PASS**;
+- output validates against EvidenceClaim: **PASS (86 / 86)**.
 
-The workflow uploads observations, claims and the run report but deliberately does **not** upload the raw government workbook while source reuse/redistribution terms remain marked `review_required`.
+The workflow uploads derived observations, claims and the run report but deliberately does **not** upload the raw government workbook while source reuse/redistribution terms remain marked `review_required`.
+
+Artifact from the measured run: `mod-procurement-pilot-v01`, artifact ID `9447194405`. The raw official workbook is not included in that artifact.
