@@ -25,9 +25,10 @@ def entity(code="7203", name="Example Motors"):
     )
 
 
-def test_edinet_five_digit_code_normalizes_to_jpx_code():
+def test_edinet_five_character_code_normalizes_to_jpx_issuer_code():
     assert normalize_edinet_security_code("72030") == "7203"
     assert normalize_edinet_security_code("72030.0") == "7203"
+    assert normalize_edinet_security_code("130A0") == "130A"
     assert normalize_edinet_security_code("130A") == "130A"
 
 
@@ -36,25 +37,15 @@ def test_edinet_security_code_bridges_to_corporate_number_without_name_match():
         {
             "証券コード": "72030",
             "ＥＤＩＮＥＴコード": "E00001",
-            "法人番号": "1111111111111",
+            "提出者法人番号": "1111111111111",
             "提出者名": "A deliberately different display name",
         }
     ]
     nta = [{"法人番号": "1111111111111", "商号又は名称": "Example Motors株式会社"}]
-    gleif = [
-        {
-            "LEI": "549300EXAMPLE0000001",
-            "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1111111111111",
-        }
-    ]
+    gleif = [{"LEI": "549300EXAMPLE0000001", "Entity.RegistrationAuthority.RegistrationAuthorityEntityID": "1111111111111"}]
     [result] = enrich_entity_batch(
-        [entity()],
-        edinet_rows=edinet,
-        edinet_source=src("edinet"),
-        nta_rows=nta,
-        nta_source=src("nta"),
-        gleif_rows=gleif,
-        gleif_source=src("gleif"),
+        [entity()], edinet_rows=edinet, edinet_source=src("edinet"),
+        nta_rows=nta, nta_source=src("nta"), gleif_rows=gleif, gleif_source=src("gleif"),
     )
     ids = result.identifier_map()
     assert ids["JPX_SECURITY_CODE"] == {"7203"}
@@ -66,8 +57,8 @@ def test_edinet_security_code_bridges_to_corporate_number_without_name_match():
 
 def test_duplicate_edinet_security_code_is_not_auto_linked():
     rows = [
-        {"証券コード": "72030", "ＥＤＩＮＥＴコード": "E00001", "法人番号": "1111111111111"},
-        {"証券コード": "72030", "ＥＤＩＮＥＴコード": "E00002", "法人番号": "2222222222222"},
+        {"証券コード": "72030", "ＥＤＩＮＥＴコード": "E00001", "提出者法人番号": "1111111111111"},
+        {"証券コード": "72030", "ＥＤＩＮＥＴコード": "E00002", "提出者法人番号": "2222222222222"},
     ]
     assert "7203" not in build_edinet_security_index(rows)
 
@@ -81,18 +72,7 @@ def test_duplicate_gleif_registration_id_is_not_auto_linked():
 
 
 def test_name_only_match_cannot_enrich():
-    edinet = [
-        {
-            "証券コード": "99990",
-            "ＥＤＩＮＥＴコード": "E99999",
-            "法人番号": "9999999999999",
-            "提出者名": "Example Motors",
-        }
-    ]
-    [result] = enrich_entity_batch(
-        [entity()],
-        edinet_rows=edinet,
-        edinet_source=src("edinet"),
-    )
+    edinet = [{"証券コード": "99990", "ＥＤＩＮＥＴコード": "E99999", "提出者法人番号": "9999999999999", "提出者名": "Example Motors"}]
+    [result] = enrich_entity_batch([entity()], edinet_rows=edinet, edinet_source=src("edinet"))
     assert "EDINET_CODE" not in result.identifier_map()
     assert "JP_CORPORATE_NUMBER" not in result.identifier_map()
