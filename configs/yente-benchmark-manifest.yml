@@ -1,0 +1,6 @@
+catalogs: []
+datasets:
+  - name: wa_benchmark
+    title: WA Commons M1.2 Benchmark Candidates
+    path: /data/candidates.ftm.json
+    version: "1"
