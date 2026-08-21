@@ -1,0 +1,22 @@
+name: paper-portfolio-evaluation-spec
+on:
+  pull_request:
+    paths:
+      - 'docs/PAPER_PORTFOLIO_EVALUATION.md'
+      - 'schemas/paper-portfolio-evaluation.v0.1.schema.json'
+      - 'schemas/examples/paper-portfolio-evaluation.example.json'
+      - 'tests/test_paper_portfolio_evaluation_spec.py'
+      - '.github/workflows/paper-portfolio-evaluation-spec.yml'
+  workflow_dispatch:
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -e '.[dev]'
+      - name: Validate paper portfolio evaluation specification
+        run: python -m pytest -q tests/test_paper_portfolio_evaluation_spec.py

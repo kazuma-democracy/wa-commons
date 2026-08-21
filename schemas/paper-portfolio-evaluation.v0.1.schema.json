@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wa-commons.example/schemas/paper-portfolio-evaluation.v0.1.schema.json",
+  "title": "WA Commons Paper Portfolio Evaluation Method v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evaluation_id",
+    "benchmark",
+    "calendar",
+    "data_integrity",
+    "metrics",
+    "costs",
+    "sensitivity",
+    "reproducibility",
+    "reporting"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "evaluation_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[a-z0-9][a-z0-9:._-]+$"
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "benchmark_id",
+        "benchmark_name",
+        "return_variant",
+        "currency",
+        "constituent_membership",
+        "weighting_method",
+        "substitution_policy"
+      ],
+      "properties": {
+        "benchmark_id": {"type": "string", "minLength": 1, "maxLength": 120},
+        "benchmark_name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "return_variant": {"enum": ["total_return", "price_return"]},
+        "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+        "constituent_membership": {"const": "point_in_time"},
+        "weighting_method": {"type": "string", "minLength": 1, "maxLength": 120},
+        "substitution_policy": {"const": "no_silent_substitution"}
+      }
+    },
+    "calendar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timezone",
+        "return_frequency",
+        "trading_days_per_year",
+        "rebalance_frequency",
+        "rebalance_anchor",
+        "decision_lag_trading_days"
+      ],
+      "properties": {
+        "timezone": {"const": "Asia/Tokyo"},
+        "return_frequency": {"const": "daily"},
+        "trading_days_per_year": {"const": 252},
+        "rebalance_frequency": {"const": "monthly"},
+        "rebalance_anchor": {"const": "first_trading_day"},
+        "decision_lag_trading_days": {"type": "integer", "minimum": 1, "maximum": 20}
+      }
+    },
+    "data_integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "knowledge_mode",
+        "survivorship_bias_control",
+        "missing_return_policy",
+        "unmapped_entity_policy",
+        "missing_factor_policy",
+        "factor_min_coverage"
+      ],
+      "properties": {
+        "knowledge_mode": {"const": "as_known_at_cutoff"},
+        "survivorship_bias_control": {"const": "point_in_time_constituents"},
+        "missing_return_policy": {"const": "BLOCK"},
+        "unmapped_entity_policy": {"const": "keep_unscreened_and_report"},
+        "missing_factor_policy": {"const": "report_insufficient_coverage"},
+        "factor_min_coverage": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["concentration", "performance", "turnover", "sector_drift", "factor_drift"],
+      "properties": {
+        "concentration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["weight_epsilon", "measures"],
+          "properties": {
+            "weight_epsilon": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.001},
+            "measures": {
+              "const": ["holding_count", "max_weight", "top10_weight", "hhi", "effective_n", "active_share"]
+            }
+          }
+        },
+        "performance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["measures", "tracking_difference_method", "tracking_error_method"],
+          "properties": {
+            "measures": {
+              "const": ["cumulative_return", "annualized_return", "annualized_volatility", "tracking_difference", "tracking_error"]
+            },
+            "tracking_difference_method": {"const": "annualized_geometric_return_difference"},
+            "tracking_error_method": {"const": "sample_std_daily_active_return_sqrt_252"}
+          }
+        },
+        "turnover": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "report_total_and_annualized"],
+          "properties": {
+            "method": {"const": "half_l1_pretrade_to_target"},
+            "report_total_and_annualized": {"const": true}
+          }
+        },
+        "sector_drift": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "unknown_bucket_required", "measures"],
+          "properties": {
+            "method": {"const": "portfolio_weight_minus_benchmark_weight"},
+            "unknown_bucket_required": {"const": true},
+            "measures": {"const": ["per_sector_difference", "max_absolute_difference", "half_l1_sector_difference"]}
+          }
+        },
+        "factor_drift": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "zero_fill_missing", "coverage_required"],
+          "properties": {
+            "method": {"const": "weighted_exposure_difference"},
+            "zero_fill_missing": {"const": false},
+            "coverage_required": {"const": true}
+          }
+        }
+      }
+    },
+    "costs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headline_bps", "scenario_bps", "application", "report_gross_and_net"],
+      "properties": {
+        "headline_bps": {"const": 10},
+        "scenario_bps": {"const": [0, 10, 25, 50]},
+        "application": {"const": "one_way_turnover_times_bps"},
+        "report_gross_and_net": {"const": true}
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence_delta_grid",
+        "quantitative_multiplier_grid",
+        "same_non_policy_inputs",
+        "required_outputs"
+      ],
+      "properties": {
+        "confidence_delta_grid": {"const": [-0.1, -0.05, 0.0, 0.05, 0.1]},
+        "quantitative_multiplier_grid": {"const": [0.5, 0.75, 1.0, 1.25, 1.5]},
+        "same_non_policy_inputs": {"const": true},
+        "required_outputs": {
+          "const": [
+            "eligible_security_count",
+            "excluded_benchmark_weight",
+            "watch_benchmark_weight",
+            "active_share",
+            "tracking_error",
+            "turnover",
+            "net_tracking_difference"
+          ]
+        }
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash_algorithm", "required_run_provenance"],
+      "properties": {
+        "hash_algorithm": {"const": "sha256"},
+        "required_run_provenance": {
+          "const": [
+            "evaluation_spec_version",
+            "code_commit_sha",
+            "evidence_graph_sha256",
+            "policy_profile_id",
+            "policy_profile_version",
+            "policy_profile_sha256",
+            "policy_evaluator_version",
+            "portfolio_constructor_id",
+            "portfolio_constructor_version",
+            "portfolio_constructor_config_sha256",
+            "benchmark_snapshot_sha256",
+            "market_data_snapshot_sha256",
+            "sector_taxonomy_id",
+            "sector_taxonomy_version",
+            "factor_dataset_id",
+            "factor_dataset_version",
+            "factor_dataset_sha256",
+            "evaluation_config_sha256",
+            "period_start",
+            "period_end"
+          ]
+        }
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_sections", "outperformance_claim_policy"],
+      "properties": {
+        "required_sections": {
+          "const": [
+            "benchmark_and_period",
+            "policy_and_evidence_versions",
+            "coverage_and_unmapped_weight",
+            "gross_and_net_performance",
+            "concentration",
+            "tracking",
+            "turnover_and_costs",
+            "sector_and_factor_drift",
+            "policy_threshold_sensitivity",
+            "limitations_and_failures"
+          ]
+        },
+        "outperformance_claim_policy": {"const": "measure_not_assume"}
+      }
+    }
+  }
+}

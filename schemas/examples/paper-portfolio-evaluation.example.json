@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1",
+  "evaluation_id": "example:jp-equity-paper-v01",
+  "benchmark": {
+    "benchmark_id": "example:jp-broad-equity",
+    "benchmark_name": "Example broad Japan equity benchmark (placeholder until licensed source is pinned)",
+    "return_variant": "total_return",
+    "currency": "JPY",
+    "constituent_membership": "point_in_time",
+    "weighting_method": "provider_native",
+    "substitution_policy": "no_silent_substitution"
+  },
+  "calendar": {
+    "timezone": "Asia/Tokyo",
+    "return_frequency": "daily",
+    "trading_days_per_year": 252,
+    "rebalance_frequency": "monthly",
+    "rebalance_anchor": "first_trading_day",
+    "decision_lag_trading_days": 1
+  },
+  "data_integrity": {
+    "knowledge_mode": "as_known_at_cutoff",
+    "survivorship_bias_control": "point_in_time_constituents",
+    "missing_return_policy": "BLOCK",
+    "unmapped_entity_policy": "keep_unscreened_and_report",
+    "missing_factor_policy": "report_insufficient_coverage",
+    "factor_min_coverage": 0.9
+  },
+  "metrics": {
+    "concentration": {
+      "weight_epsilon": 1e-8,
+      "measures": ["holding_count", "max_weight", "top10_weight", "hhi", "effective_n", "active_share"]
+    },
+    "performance": {
+      "measures": ["cumulative_return", "annualized_return", "annualized_volatility", "tracking_difference", "tracking_error"],
+      "tracking_difference_method": "annualized_geometric_return_difference",
+      "tracking_error_method": "sample_std_daily_active_return_sqrt_252"
+    },
+    "turnover": {
+      "method": "half_l1_pretrade_to_target",
+      "report_total_and_annualized": true
+    },
+    "sector_drift": {
+      "method": "portfolio_weight_minus_benchmark_weight",
+      "unknown_bucket_required": true,
+      "measures": ["per_sector_difference", "max_absolute_difference", "half_l1_sector_difference"]
+    },
+    "factor_drift": {
+      "method": "weighted_exposure_difference",
+      "zero_fill_missing": false,
+      "coverage_required": true
+    }
+  },
+  "costs": {
+    "headline_bps": 10,
+    "scenario_bps": [0, 10, 25, 50],
+    "application": "one_way_turnover_times_bps",
+    "report_gross_and_net": true
+  },
+  "sensitivity": {
+    "confidence_delta_grid": [-0.1, -0.05, 0.0, 0.05, 0.1],
+    "quantitative_multiplier_grid": [0.5, 0.75, 1.0, 1.25, 1.5],
+    "same_non_policy_inputs": true,
+    "required_outputs": [
+      "eligible_security_count",
+      "excluded_benchmark_weight",
+      "watch_benchmark_weight",
+      "active_share",
+      "tracking_error",
+      "turnover",
+      "net_tracking_difference"
+    ]
+  },
+  "reproducibility": {
+    "hash_algorithm": "sha256",
+    "required_run_provenance": [
+      "evaluation_spec_version",
+      "code_commit_sha",
+      "evidence_graph_sha256",
+      "policy_profile_id",
+      "policy_profile_version",
+      "policy_profile_sha256",
+      "policy_evaluator_version",
+      "portfolio_constructor_id",
+      "portfolio_constructor_version",
+      "portfolio_constructor_config_sha256",
+      "benchmark_snapshot_sha256",
+      "market_data_snapshot_sha256",
+      "sector_taxonomy_id",
+      "sector_taxonomy_version",
+      "factor_dataset_id",
+      "factor_dataset_version",
+      "factor_dataset_sha256",
+      "evaluation_config_sha256",
+      "period_start",
+      "period_end"
+    ]
+  },
+  "reporting": {
+    "required_sections": [
+      "benchmark_and_period",
+      "policy_and_evidence_versions",
+      "coverage_and_unmapped_weight",
+      "gross_and_net_performance",
+      "concentration",
+      "tracking",
+      "turnover_and_costs",
+      "sector_and_factor_drift",
+      "policy_threshold_sensitivity",
+      "limitations_and_failures"
+    ],
+    "outperformance_claim_policy": "measure_not_assume"
+  }
+}
