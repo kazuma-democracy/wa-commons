@@ -2,6 +2,7 @@ from wa_commons.identity.enrich import (
     build_edinet_security_index,
     build_gleif_registration_index,
     enrich_entity_batch,
+    normalize_edinet_security_code,
 )
 from wa_commons.identity.jpx import from_jpx_row
 from wa_commons.identity.models import SourceRef
@@ -24,10 +25,16 @@ def entity(code="7203", name="Example Motors"):
     )
 
 
+def test_edinet_five_digit_code_normalizes_to_jpx_code():
+    assert normalize_edinet_security_code("72030") == "7203"
+    assert normalize_edinet_security_code("72030.0") == "7203"
+    assert normalize_edinet_security_code("130A") == "130A"
+
+
 def test_edinet_security_code_bridges_to_corporate_number_without_name_match():
     edinet = [
         {
-            "証券コード": "7203",
+            "証券コード": "72030",
             "ＥＤＩＮＥＴコード": "E00001",
             "法人番号": "1111111111111",
             "提出者名": "A deliberately different display name",
@@ -59,8 +66,8 @@ def test_edinet_security_code_bridges_to_corporate_number_without_name_match():
 
 def test_duplicate_edinet_security_code_is_not_auto_linked():
     rows = [
-        {"証券コード": "7203", "ＥＤＩＮＥＴコード": "E00001", "法人番号": "1111111111111"},
-        {"証券コード": "7203", "ＥＤＩＮＥＴコード": "E00002", "法人番号": "2222222222222"},
+        {"証券コード": "72030", "ＥＤＩＮＥＴコード": "E00001", "法人番号": "1111111111111"},
+        {"証券コード": "72030", "ＥＤＩＮＥＴコード": "E00002", "法人番号": "2222222222222"},
     ]
     assert "7203" not in build_edinet_security_index(rows)
 
@@ -76,7 +83,7 @@ def test_duplicate_gleif_registration_id_is_not_auto_linked():
 def test_name_only_match_cannot_enrich():
     edinet = [
         {
-            "証券コード": "9999",
+            "証券コード": "99990",
             "ＥＤＩＮＥＴコード": "E99999",
             "法人番号": "9999999999999",
             "提出者名": "Example Motors",
