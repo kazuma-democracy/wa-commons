@@ -10,6 +10,15 @@ Build useful, voluntary software where repeated use can create a measurable peac
 
 The first proof vehicle is **Experiment 001 — Peace Capital**.
 
+## Current position — 2026-08-22
+
+- **M1 — Reproducible Evidence Graph: COMPLETE.** Measured clean reproduction is recorded in `docs/M1_ACCEPTANCE.md`.
+- **M2 — Explainable company screener: IN PROGRESS.** The versioned user-policy language and deterministic evaluator are implemented; the remaining bounded path is #42 → #43 → #44.
+- **M3 — Peace Capital paper portfolio: IN PROGRESS.** The preregistered evaluation specification is complete; benchmark selection, benchmark-universe expansion, constructor selection/implementation, data ingestion and the first end-to-end paper evaluation remain open as #45–#47 and #49–#51.
+- **Phase 0 governance cleanup remains open.** #8 ideological-bias red-team and #9 Japanese/English terminology review are still required and are not considered completed by later technical progress.
+
+The project intentionally allows preparatory specification work for a later phase when that work reduces benchmark gaming or implementation ambiguity. This does not waive earlier phase exit criteria or any real-money gate.
+
 ---
 
 ## Phase 0 — Public foundation
@@ -37,12 +46,12 @@ A newcomer can understand the mission, identify what is uncertain, challenge a c
 
 ---
 
-## Phase 1 — Evidence foundation
+## Phase 1 — Evidence foundation — COMPLETE
 
 ### Purpose
 Prove that consequential company classifications can be reproduced from versioned evidence rather than opaque model judgment.
 
-### Workstream 1A — Evidence schema
+### Workstream 1A — Evidence schema — DONE
 - Define minimal evidence object.
 - Separate observation, evidence, inference, policy, action, and outcome.
 - Support `CONFIRMED`, `DISPUTED`, `UNKNOWN`, `EXPIRED`.
@@ -50,22 +59,25 @@ Prove that consequential company classifications can be reproduced from versione
 
 **Issue:** #2
 
-### Workstream 1B — Source registry
+### Workstream 1B — Source registry — DONE for M1 bootstrap
 - Inventory public/licensed data sources.
 - Record publisher, scope, access, cadence, license/terms, identifiers, history, evidentiary strength, and limitations.
 - Prefer primary/public sources where possible.
 - Adopt / watch / reject each candidate explicitly.
 
+Future sources still require exact license/terms review at onboarding; M1 completion does not imply that every candidate source is cleared for redistribution.
+
 **Issue:** #4
 
-### Workstream 1C — Entity resolution
+### Workstream 1C — Entity resolution — DONE
 - Review existing OSS before writing a matcher.
 - Test Japanese company names, aliases, subsidiaries, parent ownership, ticker/legal-name differences, and historical names.
 - Choose or adapt the smallest sufficient reusable stack.
+- Demonstrate a deterministic 100-company Japanese listed-issuer identity pilot with conservative strong-ID rules.
 
 **Issue:** #3
 
-### Workstream 1D — Threat model
+### Workstream 1D — Threat model — DONE for M1
 - Data poisoning.
 - Source compromise/disappearance.
 - False entity matches.
@@ -74,110 +86,196 @@ Prove that consequential company classifications can be reproduced from versione
 - Model/tool compromise.
 - Permission escalation.
 - Privacy leakage.
+- Benchmark gaming and financial misrepresentation.
 
 **Issue:** #7
 
-### Milestone M1 — Reproducible Evidence Graph
-For a small fixed company universe, every material claim can be regenerated from a versioned source registry and evidence schema, with disputes visible.
+### Milestone M1 — Reproducible Evidence Graph — COMPLETE
+For a small fixed company universe, material claims can be regenerated from versioned sources and rules with disputes, corrections and expiry visible.
 
-### Gate to Phase 2
-Do not build portfolio recommendations until M1 exists.
+Measured acceptance is recorded in `docs/M1_ACCEPTANCE.md` and the M1 result reports.
+
+### Gate to Phase 2 — PASSED
+The evidence foundation exists. This does **not** authorize real-money trading.
 
 ---
 
-## Phase 2 — User policy and classification engine
+## Phase 2 — User policy and classification engine — IN PROGRESS
 
 ### Purpose
 Let different users apply different peace-related values to a shared evidence layer without creating one official WA Commons moral score.
 
-### Workstream 2A — Policy language
-Define a small human-readable and machine-readable policy format covering:
+### Workstream 2A — Policy language — DONE
+A small human-readable and machine-readable policy format now covers:
 - exclusions vs preferences;
 - thresholds;
-- `UNKNOWN` and `DISPUTED` handling;
+- `UNKNOWN`, `DISPUTED` and `EXPIRED` handling;
 - policy versioning;
-- shareable/forkable profiles.
+- shareable/forkable non-official profiles.
 
-**Issue:** #5
+Policy v0.1 intentionally emits `EXCLUDE / WATCH / NONE`; it does not infer `PASS` from missing evidence.
 
-### Workstream 2B — Deterministic classification
-Implement:
+**Issue:** #5 — completed.
 
-```text
-Evidence Graph + User Policy
-             ↓
-      PASS / WATCH / EXCLUDE
-```
+### Workstream 2B — Deterministic screening — IN PROGRESS
+The claim-level evaluator exists. The remaining milestone work is deliberately split:
 
-Requirements:
-- no classification without an explicit rule;
-- every outcome explains which rule fired;
+1. **#42 — M2.2a:** build the 100-company evidence coverage matrix.
+2. **#43 — M2.2b:** run the same evidence snapshot through the current user-policy profiles and produce deterministic company-level research views.
+3. **#44 — M2.2c:** build the minimal non-developer-readable explainable screener report.
+
+Requirements remain:
+- no consequential decision without an explicit rule;
+- every non-NONE outcome explains which rule/evidence fired;
 - policy and evidence versions are recorded;
 - the same inputs reproduce the same result;
+- missing coverage does not become clean/safe/PASS;
 - LLMs may assist extraction/review but must not become the hidden source of truth.
 
-### Workstream 2C — Evidence cards
-For each consequential classification show:
+### Workstream 2C — Evidence cards — DONE as a reusable component
+Evidence Cards already expose:
 - entity;
 - relevant claim;
 - source/provenance;
 - evidence/retrieval dates;
 - status and confidence;
-- policy rule;
-- why the rule fired;
+- entity-resolution state;
+- correction history;
+- policy-layer separation;
 - challenge/correction path.
 
-### Milestone M2 — Explainable company screener
-A non-developer can choose a policy and understand why each company is PASS / WATCH / EXCLUDE.
+The remaining M2 work is to connect these components across the complete fixed 100-company pilot in #44.
 
-### Gate to Phase 3
-At least two meaningfully different policy profiles must work against the same evidence layer.
+### Milestone M2 — Explainable company screener — NOT YET COMPLETE
+Exit condition:
+A non-developer can choose a policy and understand the visible decision and evidence state for every company in the fixed 100-company pilot, with at least two meaningfully different profiles evaluated against the same evidence snapshot.
+
+### Gate to full M3 integration
+Complete #42 → #43 → #44. Preparatory M3 specification/research may proceed in parallel where it does not depend on unfinished M2 behavior.
 
 ---
 
-## Phase 3 — Peace Capital paper portfolio
+## Phase 3 — Peace Capital paper portfolio — IN PROGRESS
 
 ### Purpose
 Test whether the product remains financially useful after value constraints are applied.
 
-### Workstream 3A — Evaluation specification
-Before implementation, define:
-- benchmark;
+### Workstream 3A — Evaluation specification — DONE
+The financial evaluation contract was fixed before portfolio results are generated. It defines:
+- preregistered benchmark requirements;
+- point-in-time membership and as-known-at-cutoff controls;
 - diversification/concentration metrics;
 - tracking difference/error;
 - turnover;
-- estimated costs;
+- estimated cost scenarios;
 - sector/factor drift;
 - policy-threshold sensitivity;
-- versioned reproducibility.
+- versioned reproducibility;
+- benchmark-gaming safeguards.
 
-**Issue:** #6
+**Issue:** #6 — completed. See `docs/PAPER_PORTFOLIO_EVALUATION.md`.
 
-### Workstream 3B — Portfolio construction
+### Workstream 3B — Benchmark and universe — OPEN
+
+1. **#45 — M3.2a:** research and pin the first broad Japan-equity benchmark, including reproducibility and licensing constraints.
+2. **#46 — M3.2b:** expand the existing identity spine from the fixed engineering cohort to the complete pinned benchmark universe.
+
+The benchmark must be chosen before portfolio performance is inspected.
+
+### Workstream 3C — Portfolio constructor — OPEN
+
+1. **#47 — M3.2c:** review mature OSS and define the minimum bounded constructor; do not select a method by observed return performance.
+2. **#49 — M3.3a:** implement only the selected deterministic paper-only constructor and its versioned configuration.
+
 Use mature portfolio libraries where possible. Do not invent an optimizer unless the OSS review demonstrates a gap.
 
-Initial scope:
-- fixed investment universe;
-- paper only;
-- configurable exclusions/preferences;
-- ordinary risk/diversification constraints;
-- no claim of guaranteed or superior returns.
+### Workstream 3D — Benchmark / market-data ingestion — OPEN
 
-### Workstream 3C — User-facing report
-Show:
-- selected policy;
-- excluded/watch companies and reasons;
-- resulting portfolio;
+**#50 — M3.3b:** build reproducible, point-in-time benchmark and market-data ingestion for an explicitly bounded evaluation period, including corporate-action and missing-return behavior.
+
+This work remains separate from constructor logic so a data/licensing failure does not contaminate or expand the constructor task.
+
+### Workstream 3E — First integrated paper evaluation — OPEN
+
+**#51 — M3.3c:** combine previously completed components without introducing new methodology inside the integration issue.
+
+Required output includes:
+- selected policy and evidence versions;
+- excluded/WATCH/unscreened coverage;
+- resulting target portfolio;
 - benchmark comparison;
 - concentration and risk trade-offs;
-- what changed because of the policy;
-- unresolved/unknown evidence.
+- tracking difference/error;
+- turnover and cost scenarios;
+- sector/factor drift where coverage permits;
+- threshold sensitivity;
+- limitations, blocked intervals and negative results;
+- complete reproduction manifest and output hashes.
 
-### Milestone M3 — Peace Capital v0
+### Milestone M3 — Peace Capital v0 — NOT YET COMPLETE
 A user can create a reproducible paper portfolio aligned with their own policy and see the financial trade-offs honestly.
 
 ### Gate to Phase 4
 Demonstrate at least one concrete non-ideological user benefit such as research time saved, easier customization, clearer evidence, or lower decision friction.
+
+---
+
+## Universe expansion strategy
+
+WA Commons expands **universes and evidence sources**, not hand-picked lists of interesting companies.
+
+### Stage U1 — Fixed 100-company engineering cohort — CURRENT
+
+The deterministic 100-company Japanese listed-issuer pilot remains the bounded cohort for M2 integration and regression work.
+
+Purpose:
+- stable identity regression target;
+- coverage semantics;
+- policy comparison;
+- explainable screener completion.
+
+It is not intended to be a representative hand-curated moral list.
+
+### Stage U2 — Pinned benchmark universe — NEXT
+
+After #45 chooses the primary benchmark, #46 expands the identity spine to **every security in the pinned benchmark snapshot**.
+
+Rules:
+- use the benchmark constituent set, not maintainer preference, to choose companies;
+- use point-in-time membership where required by the evaluation period;
+- preserve unresolved/disputed identities instead of forcing name-only matches;
+- report unmapped count and weight explicitly.
+
+This benchmark universe becomes the first real investable research universe for M3.
+
+### Stage U3 — Broader TSE identity universe — LATER
+
+After the benchmark pipeline is stable, extend the identity layer toward the broader TSE-listed universe. This is an identity/coverage expansion, not permission to claim complete evidence about every company.
+
+### Evidence expansion rule — source-by-source, universe-wide
+
+Evidence should normally expand by adding one reviewed source adapter and applying it across the relevant whole universe, for example:
+
+```text
+pinned company universe
+        ↓
+SIPRI adapter across all eligible entities
+        ↓
+OECD NCP adapter across all eligible entities
+        ↓
+UFLPA / other official-list adapter across all eligible entities
+        ↓
+additional reviewed sources
+```
+
+Do **not** build the evidence graph by manually choosing companies because they are famous, controversial or personally interesting. Hand-picking would create selection and scrutiny bias.
+
+For every source:
+- preserve the source's narrow factual meaning;
+- record coverage and source limitations;
+- keep `UNKNOWN` / not-integrated / no-match states distinguishable;
+- never translate missing records into innocence or guilt;
+- complete licensing/terms review before redistribution/ingestion where required.
 
 ---
 
@@ -341,13 +439,31 @@ The project should only enter these areas when earlier phases demonstrate user u
 # Dependency order
 
 ```text
-Phase 0 Public foundation
+Phase 0 governance cleanup (#8, #9 remain open)
+
+M1 Evidence foundation — COMPLETE
         ↓
-Phase 1 Evidence foundation
+M2 integration
+#42 Coverage matrix
         ↓
-Phase 2 User policy + classification
+#43 Policy screening
         ↓
-Phase 3 Peace Capital paper portfolio
+#44 Explainable screener
+        ↓
+M2 COMPLETE
+
+M3 evaluation spec (#6) — COMPLETE
+        ↓
+#45 Benchmark selection
+   ├────→ #46 Benchmark-universe identity expansion
+   ├────→ #47 OSS/constructor design → #49 Constructor implementation
+   └────→ #50 Benchmark/market-data ingestion
+                    ↓
+       #46 + #49 + #50 + M2 outputs
+                    ↓
+          #51 First paper evaluation
+                    ↓
+                M3 COMPLETE
         ↓
 Phase 4 Utility validation
         ↓
@@ -362,17 +478,34 @@ Phase 8 International ecosystem
 Phase 9 Long-horizon infrastructure
 ```
 
+## Task-splitting discipline
+
+To keep work bounded and failures local:
+
+- one issue should have one clear artifact or integration goal;
+- research/selection, implementation, data ingestion and end-to-end acceptance should remain separate when they can fail independently;
+- later issues must consume completed, versioned outputs rather than silently redesigning earlier methodology;
+- if an issue grows beyond its stated scope, split it instead of broadening acceptance criteria;
+- each implementation issue should have targeted tests and exact changed-file review before merge.
+
 ## Hard gates
 
 WA Commons should **not**:
-- add real-money autonomous trading before evidence, reproducibility, threat modeling, and user-utility validation;
+- add real-money autonomous trading before evidence, reproducibility, threat modeling, user-utility validation, financial/legal review, credential architecture, risk controls and explicit governance approval;
 - generalize into many domains before Experiment 001 teaches us what the reusable core actually is;
 - build custom infrastructure before an OSS reuse review;
 - hide disputed evidence to make the product look cleaner;
+- treat missing evidence as PASS/clean/safe;
+- choose companies manually because they look controversial when a universe-level selection rule is available;
+- choose or replace a benchmark after observing performance to improve headline results;
 - grant agents broad authority merely because the software is technically capable of it.
 
-## Immediate next milestone
+## Immediate next work
 
-**M1 — Reproducible Evidence Graph.**
+The nearest bounded sequence is:
 
-The current highest-priority issues are #2, #3, #4, and #7. They establish the evidence schema, reusable entity-resolution stack, source registry, and threat model required before portfolio work begins.
+1. **#42 — M2.2a:** 100-company evidence coverage matrix.
+2. **#43 — M2.2b:** deterministic 100-company policy screening.
+3. **#44 — M2.2c:** explainable screener report and explicit M2 exit review.
+
+In parallel only where dependencies allow, **#45** may research and preregister the first Japan-equity benchmark. Portfolio construction, market-data integration and end-to-end evaluation remain separate later issues.
