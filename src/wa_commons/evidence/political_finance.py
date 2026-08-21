@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import csv
+from io import StringIO
 import hashlib
 import re
 
@@ -30,6 +32,8 @@ class PoliticalFinanceObservation:
     retrieved_at: str
     source_sha256: str
     donor_type: str = "organization_or_corporation"
+    extraction_method: str = "ocr_tsv_geometry"
+    extraction_review_required: bool = True
     corporate_number: str = ""
     identity_decision: str = "UNRESOLVED"
     entity_id: str | None = None
@@ -53,7 +57,7 @@ def source_url(part: int) -> str:
 
 
 def conservative_identity_resolution(donor_name: str, *, corporate_number: str | None = None) -> tuple[str, str | None]:
-    """Route donor identity through the M1.2 policy; names alone never auto-link."""
+    """Route donor identity through M1.2. Printed/OCR names alone never auto-link."""
     number = re.sub(r"\D", "", corporate_number or "")
     if len(number) != 13:
         return "UNRESOLVED", None
@@ -70,70 +74,95 @@ def _digits(text: str) -> str:
     return re.sub(r"\D", "", (text or "").translate(table))
 
 
-def parse_organization_ocr_page(text: str, *, part: int, page: int, retrieved_at: str, source_sha256: str) -> list[PoliticalFinanceObservation]:
-    """Parse conservative row candidates from a known section-2 filing page.
+def _clean_donor(text: str) -> str:
+    text = normalize_text(text).strip("|[]{}<> _ー-・.、")
+    return re.sub(r"\s+", "", text)
 
-    The caller must select pages independently verified to be section 2
-    (法人・その他の団体). We do not infer donor type from a name. OCR rows that
-    do not expose an amount plus 2023 month/day are rejected rather than guessed.
-    Slash-like continuation rows inherit only the immediately preceding donor.
+
+def parse_organization_tsv_page(tsv: str, *, part: int, page: int, retrieved_at: str, source_sha256: str) -> list[PoliticalFinanceObservation]:
+    """Extract conservative row observations from a pre-selected section-2 page.
+
+    Tesseract's plain text does not preserve these scanned table columns reliably,
+    so rows are reconstructed from TSV coordinates. Only the donor and amount
+    columns are used. Reporting period comes from the fixed 2023 filing. OCR
+    output remains review-required and never establishes identity by itself.
     """
+    rows = list(csv.DictReader(StringIO(tsv), delimiter="\t"))
+    page_row = next((r for r in rows if r.get("level") == "1"), None)
+    if not page_row:
+        return []
+    width = max(int(page_row.get("width") or 0), 1)
+    height = max(int(page_row.get("height") or 0), 1)
+
+    groups: dict[tuple[str, str, str, str], list[dict[str, str]]] = {}
+    filing_id = ""
+    for row in rows:
+        text = normalize_text(row.get("text", ""))
+        if not text:
+            continue
+        match = re.search(r"(\d{2}-2-\d{5})", text)
+        if match:
+            filing_id = match.group(1)
+        if row.get("level") != "5":
+            continue
+        key = (row.get("block_num", ""), row.get("par_num", ""), row.get("line_num", ""), row.get("top", ""))
+        groups.setdefault(key, []).append(row)
+
     observations: list[PoliticalFinanceObservation] = []
     current_donor = ""
-    filing_id = ""
-    lines = [normalize_text(line) for line in (text or "").splitlines() if normalize_text(line)]
-    for line in lines:
-        m_filing = re.search(r"(\d{2}-2-\d{5})", line)
-        if m_filing:
-            filing_id = m_filing.group(1)
-        if "小計" in line or "合計" in line or "その他の寄附" in line or "その他の" in line and "寄" in line:
+    for words in sorted(groups.values(), key=lambda ws: min(int(w.get("top") or 0) for w in ws)):
+        top = min(int(w.get("top") or 0) for w in words)
+        if top < height * 0.22 or top > height * 0.86:
             continue
-        parts = [normalize_text(p) for p in line.split("|")]
-        if len(parts) < 4:
+
+        donor_words = []
+        amount_words = []
+        for word in words:
+            text = normalize_text(word.get("text", ""))
+            left = int(word.get("left") or 0)
+            w = int(word.get("width") or 0)
+            center = (left + w / 2) / width
+            if center < 0.275:
+                donor_words.append((left, text))
+            elif 0.275 <= center < 0.385:
+                amount_words.append((left, text))
+
+        donor_raw = "".join(text for _, text in sorted(donor_words))
+        amount_raw = "".join(text for _, text in sorted(amount_words))
+        donor = _clean_donor(donor_raw)
+        amount_digits = _digits(amount_raw)
+        if not amount_digits:
             continue
-        first = parts[0]
-        # Pull amount/year/month/day from the first numeric-looking cells after donor.
-        numeric = []
-        for cell in parts[1:7]:
-            d = _digits(cell)
-            if d:
-                numeric.append(d)
-        if len(numeric) < 4:
-            continue
-        # Locate a plausible Reiwa-5 date triple. Amount is the numeric field just before it.
-        date_at = None
-        for i in range(1, len(numeric) - 2):
-            if numeric[i] == "5" and 1 <= int(numeric[i + 1]) <= 12 and 1 <= int(numeric[i + 2]) <= 31:
-                date_at = i
-                break
-        if date_at is None:
-            continue
-        amount_digits = numeric[date_at - 1]
         amount = int(amount_digits)
-        if amount <= 0:
+        if amount <= 0 or amount > 1_000_000_000:
             continue
-        donor = first.strip(" /ヵカM7りルヶー_上")
-        continuation = not donor or donor in {"D", "MD", "M"}
+
+        if any(token in donor for token in ("寄附", "合計", "小計", "その他", "十億", "百万", "千円", "年月")):
+            continue
+        continuation = not donor or donor in {"/", "ヵ", "カ", "M", "7", "ル", "り", "上", "間", "昌", "電"}
         if continuation:
             donor = current_donor
         else:
-            # Exclude obvious headings; exact organization status comes from the section.
-            if any(token in donor for token in ("寄附者", "十億", "年月", "その 7", "その_7")):
-                continue
-            current_donor = donor
+            # Require at least two visible characters for a new donor. One-character
+            # OCR fragments cannot start an entity and are dropped, never guessed.
+            if len(donor) < 2:
+                donor = current_donor
+            else:
+                current_donor = donor
         if not donor:
             continue
-        obs_key = hashlib.sha256(f"{part}|{page}|{len(observations)}|{donor}|{amount}".encode("utf-8")).hexdigest()[:16]
+
+        key = hashlib.sha256(f"{part}|{page}|{top}|{donor}|{amount}".encode("utf-8")).hexdigest()[:16]
         decision, entity_id = conservative_identity_resolution(donor)
         observations.append(PoliticalFinanceObservation(
-            observation_id=f"wc:obs:political-finance:{obs_key}",
+            observation_id=f"wc:obs:political-finance:{key}",
             donor_name=donor,
             recipient=RECIPIENT,
             amount_jpy=amount,
             reporting_year=REPORTING_YEAR,
             filing_id=filing_id or f"part-{part:02d}-page-{page:03d}",
             source_url=source_url(part),
-            source_locator=f"pdf_part={part};page={page}",
+            source_locator=f"pdf_part={part};page={page};ocr_top={top}",
             retrieved_at=retrieved_at,
             source_sha256=source_sha256,
             identity_decision=decision,
@@ -143,8 +172,10 @@ def parse_organization_ocr_page(text: str, *, part: int, page: int, retrieved_at
 
 
 def observation_to_claim(observation: PoliticalFinanceObservation) -> dict | None:
-    """Create a narrow donation fact only after strong-ID resolution."""
+    """Create a narrow donation fact only after strong-ID resolution and review."""
     if observation.identity_decision != "AUTO_LINK" or not observation.entity_id:
+        return None
+    if observation.extraction_review_required:
         return None
     key = hashlib.sha256(observation.observation_id.encode("utf-8")).hexdigest()[:16]
     identifiers = []
