@@ -195,8 +195,10 @@ def observation_to_claim(observation: ProcurementObservation) -> dict | None:
     """
     if observation.identity_decision != "AUTO_LINK" or not observation.entity_id:
         return None
-    suffix = observation.observation_id.split(":")[-2:]
-    claim_suffix = "-".join(suffix).lower().replace(" ", "-")
+    # Source sheet names may contain Japanese characters. Canonical claim/evidence
+    # IDs are ASCII-only, so derive a stable key from the full observation ID while
+    # keeping the human-readable workbook locator separately in evidence.locator.
+    stable_key = hashlib.sha256(observation.observation_id.encode("utf-8")).hexdigest()[:16]
     value = {
         "contracting_authority": observation.contracting_authority,
         "contract_subject": observation.subject,
@@ -206,7 +208,7 @@ def observation_to_claim(observation: ProcurementObservation) -> dict | None:
     }
     return {
         "schema_version": "0.1",
-        "claim_id": f"wc:claim:mod-fy2026-04:{claim_suffix}",
+        "claim_id": f"wc:claim:mod-fy2026-04:{stable_key}",
         "subject": {
             "entity_id": observation.entity_id,
             "entity_type": "company",
@@ -229,7 +231,7 @@ def observation_to_claim(observation: ProcurementObservation) -> dict | None:
             "effective_to": observation.contract_date,
         },
         "evidence": [{
-            "evidence_id": observation.observation_id.replace("wc:obs:", "wc:evidence:"),
+            "evidence_id": f"wc:evidence:mod-fy2026-04:{stable_key}",
             "source_id": SOURCE_ID,
             "source_url": observation.source_url,
             "publisher": "Japan Ministry of Defense",
