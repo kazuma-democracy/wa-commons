@@ -140,22 +140,26 @@ def main() -> None:
     if correction_demo["before_card_sha256"] == correction_demo["after_card_sha256"]:
         raise SystemExit("Dependent evidence card did not change after correction")
 
-    # Controlled expiry transition on a schema-backed real claim copy. This is a
-    # demonstration only and is not presented as the current status of the company.
+    # Controlled expiry transition on a CONFIRMED schema-backed real claim copy.
+    # This is a demonstration only and is not presented as the current status of
+    # the company.
+    expiry_source = next((c for c in real_claims if c["adjudication"]["status"] == "confirmed"), None)
+    if expiry_source is None:
+        raise SystemExit("No CONFIRMED real claim available for expiry propagation demo")
     expiry_fixture = apply_status_transition(
-        real_claims[0],
+        expiry_source,
         new_status="expired",
         reason="Controlled M1.7 fixture: evidence exceeded a hypothetical revalidation horizon.",
         changed_at=FIXED_EXPIRY_AT,
     )
     validator.validate(expiry_fixture)
     expiry_demo = {
-        "base_claim_id": real_claims[0]["claim_id"],
-        "before_status": card_from_claim(real_claims[0]).adjudication["status"],
+        "base_claim_id": expiry_source["claim_id"],
+        "before_status": card_from_claim(expiry_source).adjudication["status"],
         "after_status": card_from_claim(expiry_fixture).adjudication["status"],
         "policy_context": expiry_fixture.get("policy_context"),
     }
-    if expiry_demo["after_status"] != "EXPIRED" or expiry_demo["policy_context"] is not None:
+    if expiry_demo["before_status"] != "CONFIRMED" or expiry_demo["after_status"] != "EXPIRED" or expiry_demo["policy_context"] is not None:
         raise SystemExit("Expiry propagation/policy-separation gate failed")
 
     outage_demo = outage_result(
@@ -242,6 +246,7 @@ def main() -> None:
         "canonical_entity_count": len(graph["entity_ids"]),
         "canonical_claim_count": len(graph["claims"]),
         "adapter_count": len(graph["adapter_runs"]),
+        "adapter_runs": adapter_runs,
         "model_assisted_stages": graph["model_assisted_stages"],
         "correction_demo": correction_demo,
         "expiry_demo": expiry_demo,
