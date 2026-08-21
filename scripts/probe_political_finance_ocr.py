@@ -11,20 +11,21 @@ from wa_commons.evidence.political_finance import source_url
 def main() -> None:
     out = Path("artifacts/political-finance-ocr-probe")
     out.mkdir(parents=True, exist_ok=True)
-    pdf = out / "part01.pdf"
-    req = urllib.request.Request(source_url(1), headers={"User-Agent": "wa-commons-m1/0.1"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        pdf.write_bytes(r.read())
-    # Bound the experiment: inspect only the end of part 1 to locate the
-    # transition from individual donors to organizations/corporations.
-    prefix = out / "page"
-    subprocess.run(["pdftoppm", "-f", "95", "-l", "112", "-r", "150", "-gray", "-png", str(pdf), str(prefix)], check=True)
     rows = []
-    for image in sorted(out.glob("page-*.png")):
-        proc = subprocess.run(["tesseract", str(image), "stdout", "-l", "jpn", "--psm", "6"], check=True, text=True, capture_output=True)
-        rows.append({"image": image.name, "text": proc.stdout[:12000]})
+    # Bounded boundary search: only the first two pages of three widely spaced
+    # parts. This locates the organization/corporation section without OCRing
+    # thousands of pages or retaining personal-donor data as an artifact.
+    for part in (2, 10, 20):
+        pdf = out / f"part{part:02d}.pdf"
+        req = urllib.request.Request(source_url(part), headers={"User-Agent": "wa-commons-m1/0.1"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            pdf.write_bytes(r.read())
+        prefix = out / f"p{part:02d}"
+        subprocess.run(["pdftoppm", "-f", "1", "-l", "2", "-r", "140", "-gray", "-png", str(pdf), str(prefix)], check=True)
+        for image in sorted(out.glob(f"p{part:02d}-*.png")):
+            proc = subprocess.run(["tesseract", str(image), "stdout", "-l", "jpn", "--psm", "6"], check=True, text=True, capture_output=True)
+            rows.append({"part": part, "image": image.name, "text": proc.stdout[:8000]})
     print(json.dumps(rows, ensure_ascii=False, indent=2))
-    (out / "ocr-sample.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":
