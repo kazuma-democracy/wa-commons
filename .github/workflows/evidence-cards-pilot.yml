@@ -3,10 +3,13 @@ on:
   pull_request:
     paths:
       - 'src/wa_commons/evidence/cards.py'
+      - 'src/wa_commons/evidence/mod_procurement.py'
+      - 'src/wa_commons/evidence/contract_subject.py'
       - 'scripts/run_evidence_cards_pilot.py'
       - 'tests/test_evidence_cards.py'
       - 'schemas/evidence-claim.v0.1.schema.json'
       - 'schemas/examples/evidence-claim.examples.json'
+      - 'docs/results/M1_6_EVIDENCE_CARDS_V01.md'
       - '.github/workflows/evidence-cards-pilot.yml'
   workflow_dispatch:
 jobs:
