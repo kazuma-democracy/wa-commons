@@ -10,7 +10,7 @@ from wa_commons.evidence.political_finance import parse_organization_tsv_page, s
 
 PART = 18
 FIRST_PAGE = 1
-LAST_PAGE = 30
+LAST_PAGE = 60
 
 
 def main() -> None:
