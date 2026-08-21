@@ -43,6 +43,14 @@ class MatchResult:
     matcher: str
 
 
+def provenance_class(case: BenchmarkCase) -> str:
+    if case.provenance.startswith("source_verified|"):
+        return "source_verified"
+    if case.provenance == "synthetic_adversarial":
+        return "synthetic_adversarial"
+    return "other"
+
+
 def _norm_id(field: str, value: str) -> str:
     value = str(value or "").strip()
     if field == "security_code":
@@ -66,11 +74,7 @@ def _strong_id_comparison(left: BenchmarkRecord, right: BenchmarkRecord) -> tupl
 
 
 def conservative_baseline(left: BenchmarkRecord, right: BenchmarkRecord) -> MatchResult:
-    """Transparent safety baseline for threshold calibration.
-
-    This is intentionally not a production fuzzy matcher. It exists as a simple,
-    auditable comparison point for yente/Splink-style matchers.
-    """
+    """Transparent safety baseline for threshold calibration."""
     strong_aligned, strong_conflicts = _strong_id_comparison(left, right)
     if strong_conflicts:
         return MatchResult("DISPUTED", 0.0, tuple(strong_aligned), tuple(strong_conflicts), "wa-conservative-v0.1")
@@ -99,9 +103,6 @@ def conservative_baseline(left: BenchmarkRecord, right: BenchmarkRecord) -> Matc
     if conflicts:
         return MatchResult("REVIEW", name_score, tuple(aligned), tuple(conflicts), "wa-conservative-v0.1")
 
-    # Consequential name-only links never auto-link. A broad attribute such as
-    # jurisdiction is not enough corroboration: require a more entity-specific
-    # aligned attribute (address in v0.1) unless an exact strong ID already matched.
     substantive_corroboration = "address" in aligned
     if name_score >= 0.94 and substantive_corroboration:
         return MatchResult("AUTO_LINK", name_score, tuple(aligned), (), "wa-conservative-v0.1")
@@ -122,6 +123,7 @@ def evaluate(cases: Iterable[BenchmarkCase], matcher=conservative_baseline) -> d
     rows = []
     tp = fp = fn = tn = review = disputed = 0
     by_type: dict[str, dict[str, int]] = {}
+    by_provenance: dict[str, dict[str, int]] = {}
 
     for case in cases:
         result = matcher(case.left, case.right)
@@ -140,13 +142,30 @@ def evaluate(cases: Iterable[BenchmarkCase], matcher=conservative_baseline) -> d
         else:
             tn += 1
 
+        error = int((predicted and not actual) or (not predicted and actual))
         bucket = by_type.setdefault(case.case_type, {"cases": 0, "auto_link": 0, "review": 0, "disputed": 0, "errors": 0})
         bucket["cases"] += 1
         bucket["auto_link"] += int(result.decision == "AUTO_LINK")
         bucket["review"] += int(result.decision == "REVIEW")
         bucket["disputed"] += int(result.decision == "DISPUTED")
-        bucket["errors"] += int((predicted and not actual) or (not predicted and actual))
-        rows.append({"case_id": case.case_id, "expected": case.expected, "result": asdict(result)})
+        bucket["errors"] += error
+
+        pclass = provenance_class(case)
+        p_bucket = by_provenance.setdefault(pclass, {"cases": 0, "auto_link": 0, "review": 0, "disputed": 0, "errors": 0})
+        p_bucket["cases"] += 1
+        p_bucket["auto_link"] += int(result.decision == "AUTO_LINK")
+        p_bucket["review"] += int(result.decision == "REVIEW")
+        p_bucket["disputed"] += int(result.decision == "DISPUTED")
+        p_bucket["errors"] += error
+
+        rows.append({
+            "case_id": case.case_id,
+            "case_type": case.case_type,
+            "expected": case.expected,
+            "provenance_class": pclass,
+            "provenance": case.provenance,
+            "result": asdict(result),
+        })
 
     precision = tp / (tp + fp) if tp + fp else 1.0
     recall = tp / (tp + fn) if tp + fn else 1.0
@@ -164,5 +183,6 @@ def evaluate(cases: Iterable[BenchmarkCase], matcher=conservative_baseline) -> d
         "manual_review_rate": review / total if total else 0.0,
         "disputed_rate": disputed / total if total else 0.0,
         "by_type": by_type,
+        "by_provenance": by_provenance,
         "rows": rows,
     }
