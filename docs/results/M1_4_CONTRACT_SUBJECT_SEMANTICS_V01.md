@@ -1,6 +1,6 @@
 # M1.4 Contract-Subject Evidence Semantics v0.1
 
-Status: **implementation candidate; real-snapshot CI measurement pending**.
+Status: **PASS for issue #15 acceptance on the fixed M1.3 snapshot**.
 
 Related issue: #15.
 
@@ -31,7 +31,7 @@ If more than one category family matches the same subject, the classifier does *
 
 Unmatched text follows the same fail-safe path to `UNKNOWN`.
 
-## Labeled fixtures
+## Labeled fixture measurement
 
 `tests/fixtures/contract_subject_labels.json` contains 21 labeled cases covering all four categories, including deliberate conflicts:
 
@@ -41,7 +41,49 @@ Unmatched text follows the same fail-safe path to `UNKNOWN`.
 - vague unmatched examples;
 - mixed military + dual-use and civilian + dual-use examples that must become `UNKNOWN`.
 
-The CI runner publishes a full 4x4 confusion matrix and error rows. Any labeled error fails the M1.4 workflow.
+Measured confusion matrix on CI run `contract-subject-semantics #1`:
+
+| Expected \\ Actual | MILITARY_SPECIFIC | DUAL_USE | CIVILIAN | UNKNOWN |
+|---|---:|---:|---:|---:|
+| MILITARY_SPECIFIC | 5 | 0 | 0 | 0 |
+| DUAL_USE | 0 | 5 | 0 | 0 |
+| CIVILIAN | 0 | 0 | 6 | 0 |
+| UNKNOWN | 0 | 0 | 0 | 5 |
+
+Fixture errors: **0 / 21**.
+
+This is a regression/behavior fixture, not an independent estimate of production accuracy. It proves the configured rules behave as labeled; it does not justify expanding the vocabulary without separate sourced review.
+
+## Real fixed-snapshot measurement
+
+Source: the same FY2026 April competitive goods/services XLSX used by M1.3.
+
+Measured on 2026-08-21:
+
+- records: **88**;
+- `MILITARY_SPECIFIC`: **0**;
+- `DUAL_USE`: **4**;
+- `CIVILIAN`: **17**;
+- `UNKNOWN`: **67**;
+- review queue: **67 / 88 = 76.14%**;
+- identity-resolved derived claims: **86**;
+- schema-validated derived claims: **86 / 86**.
+
+The zero `MILITARY_SPECIFIC` result must **not** be interpreted as proof that the Ministry of Defense had no military-specific procurement in April. It means only that this fixed disclosure contained no subject text that crossed the deliberately narrow `contract-subject-v0.1` military-specific rule gate.
+
+Likewise, the 76.14% UNKNOWN rate is an explicit limitation of v0.1 rather than a reason to silently loosen rules. Reducing that review burden requires additional labeled/source-reviewed examples and a new versioned rule change.
+
+## Error / failure review
+
+Observed failure risk is currently dominated by **under-classification**, not false military attribution:
+
+1. many real subjects are too specific, abbreviated, administrative, or domain-dependent for the narrow token list and therefore remain UNKNOWN;
+2. category collisions are intentionally UNKNOWN rather than resolved by precedence;
+3. the current labeled fixture set is small and partly designed from known behavior, so its zero-error result should not be treated as calibrated production accuracy;
+4. no model-assisted fallback is enabled in v0.1; this avoids opaque confidence but leaves manual review burden high;
+5. no conclusion about absence of military activity may be drawn from an UNKNOWN or unmatched result.
+
+The main safety benefit is that the classifier cannot turn the words `Japan Ministry of Defense` into a military-specific classification by itself.
 
 ## Derived EvidenceClaims
 
@@ -58,15 +100,18 @@ An identity-resolved M1.3 observation can produce one narrow derived claim:
 
 `UNKNOWN` claims use adjudication status `unknown` and remain reviewable. Other deterministic categories use `confirmed` for the narrow statement that the configured rule classified the recorded subject that way. The classifier does not create a separate generic `weapons_activity` accusation.
 
-## Real-snapshot gate
+## Acceptance verification
 
-`.github/workflows/contract-subject-semantics.yml` re-downloads the same fixed FY2026 April competitive goods/services XLSX used by M1.3 and requires:
+`.github/workflows/contract-subject-semantics.yml` re-downloads the same fixed FY2026 April competitive goods/services XLSX used by M1.3 and verifies:
 
 - at least 50 parsed real records;
 - zero errors on the labeled fixture set;
+- all four target categories represented in labeled fixtures;
 - at least one real `CIVILIAN` classification;
 - at least one real `UNKNOWN` review item, guarding against an overconfident classifier;
 - classification claims only for suppliers that passed the M1.3 identity-resolution gate;
-- every generated classification claim validates against the canonical EvidenceClaim schema.
+- every generated classification claim validates against the canonical EvidenceClaim schema;
+- contracting authority is not a classifier feature;
+- no user-policy decision is produced.
 
-The workflow publishes the classification distribution, review-queue burden, confusion matrix and classified rows for inspection.
+Artifact from the first successful measured run: `contract-subject-semantics-v01`, artifact ID `9448070491`, uploaded zip SHA-256 `758ad2cdf55713dcedb261660f283a90ea145b392dd4f6d24a845c8d5cd1d222`.
