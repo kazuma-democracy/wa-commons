@@ -12,10 +12,9 @@ def main() -> None:
     out = Path("artifacts/political-finance-ocr-probe")
     out.mkdir(parents=True, exist_ok=True)
     rows = []
-    # Bounded boundary search: only the first two pages of three widely spaced
-    # parts. This locates the organization/corporation section without OCRing
-    # thousands of pages or retaining personal-donor data as an artifact.
-    for part in (2, 10, 20):
+    # Form 00-1 was still present in part 10; form 00-3 is present in part 20.
+    # Inspect only first two pages of parts 15/18/19 to locate form 00-2.
+    for part in (15, 18, 19):
         pdf = out / f"part{part:02d}.pdf"
         req = urllib.request.Request(source_url(part), headers={"User-Agent": "wa-commons-m1/0.1"})
         with urllib.request.urlopen(req, timeout=30) as r:
