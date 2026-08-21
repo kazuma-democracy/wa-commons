@@ -113,6 +113,13 @@ def report_for(rows: list[dict]) -> dict:
     }
 
 
+def grouped_report(rows: list[dict], key: str) -> dict:
+    output = {}
+    for value in sorted({row[key] for row in rows}):
+        output[value] = report_for([row for row in rows if row[key] == value])
+    return output
+
+
 def main() -> None:
     if splink.__version__ != SPLINK_VERSION:
         raise RuntimeError(f"Expected Splink {SPLINK_VERSION}, got {splink.__version__}")
@@ -122,10 +129,6 @@ def main() -> None:
     training = train_unsupervised(linker)
     predictions = linker.inference.predict(threshold_match_probability=0.0).as_pandas_dataframe()
     rows = paired_rows(cases, predictions)
-
-    by_provenance = {}
-    for pclass in sorted({row["provenance_class"] for row in rows}):
-        by_provenance[pclass] = report_for([row for row in rows if row["provenance_class"] == pclass])
 
     report = {
         "matcher": "splink",
@@ -137,8 +140,14 @@ def main() -> None:
         "parameter_estimation": "unsupervised; benchmark truth labels not used for training",
         "probability_two_random_records_match": 1 / 420,
         "training": training,
+        "training_limitations": [
+            "The M1.2 corpus is small and sparse for some comparison levels.",
+            "Splink 4.0.16 emitted warnings that some name, LEI, EDINET, jurisdiction, security-code and address comparison levels were not observed during parameter estimation.",
+            "Splink therefore used default values for some untrained m/u parameters during prediction; these warnings are a measured limitation of this v0.1 comparison rather than silently tuned away.",
+        ],
         **report_for(rows),
-        "by_provenance": by_provenance,
+        "by_provenance": grouped_report(rows, "provenance_class"),
+        "by_type": grouped_report(rows, "case_type"),
         "wa_conservative_v0_1": baseline_summary(cases),
         "note": "Score cuts are descriptive measurement points only; M1.2c does not choose a production matcher or threshold.",
     }
