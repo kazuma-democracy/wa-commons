@@ -12,14 +12,15 @@ The project advances by evidence and exit criteria, not by dates alone. A phase 
 Build **Peace Capital v0**, a research and paper-trading product that helps a user apply their own peace-related values to investment research without pretending ordinary financial goals do not matter.
 
 ### What must exist
-- A versioned Evidence Graph for a small, fixed company universe.
+- A versioned Evidence Graph proven first on a small, fixed engineering cohort.
+- A deterministic canonical TSE domestic listed-company universe that scales identity/evidence coverage beyond the 100-company regression cohort without hand-picking companies.
 - Public source registry with provenance, update cadence, license/terms, and limitations.
 - Reusable entity-resolution layer selected through an OSS review.
 - Explicit user policy format separating exclusions from preferences.
 - Evidence statuses including `CONFIRMED`, `DISPUTED`, `UNKNOWN`, and `EXPIRED`.
-- Reproducible PASS / WATCH / EXCLUDE decisions generated only from user policy + evidence.
+- Reproducible `EXCLUDE / WATCH / NONE` decisions generated only from user policy + evidence; `NONE` must never be presented as clean/safe/PASS.
 - Human-readable evidence cards explaining every consequential classification.
-- A paper portfolio compared with a normal benchmark on diversification, concentration, tracking error/difference, turnover, and estimated costs.
+- A paper portfolio compared with a preregistered normal benchmark on diversification, concentration, tracking error/difference, turnover, and estimated costs.
 - Threat model and ideological-bias red-team review.
 - A minimal public interface or report that a non-developer can understand.
 
@@ -45,7 +46,8 @@ Short-term is complete when:
 - No opaque blacklist.
 - No claim that peace-aligned investing necessarily outperforms.
 - No autonomous real-money execution.
-- No attempt to cover every company, country, or ethical issue in v0.
+- No claim of complete evidence about every company merely because the identity universe is broad.
+- No attempt to cover every country or ethical issue in v0.
 
 ---
 
