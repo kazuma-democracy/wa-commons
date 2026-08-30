@@ -10,11 +10,11 @@ Build useful, voluntary software where repeated use can create a measurable peac
 
 The first proof vehicle is **Experiment 001 — Peace Capital**.
 
-## Current position — 2026-08-22
+## Current position — 2026-08-30
 
 - **M1 — Reproducible Evidence Graph: COMPLETE.** Measured clean reproduction is recorded in `docs/M1_ACCEPTANCE.md`.
 - **M2 — Explainable company screener: IN PROGRESS.** The versioned user-policy language and deterministic evaluator are implemented; the remaining bounded path is #42 → #43 → #44.
-- **M3 — Peace Capital paper portfolio: IN PROGRESS.** The preregistered evaluation specification is complete; benchmark selection, benchmark-universe expansion, constructor selection/implementation, data ingestion and the first end-to-end paper evaluation remain open as #45–#47 and #49–#51.
+- **M3 — Peace Capital paper portfolio: IN PROGRESS.** The preregistered evaluation specification is complete. The product-universe strategy is now **100-company engineering cohort → canonical TSE domestic listed-company universe**; the benchmark is a separately selected subset/view used for financial evaluation rather than an intermediate coverage universe.
 - **Phase 0 governance cleanup remains open.** #8 ideological-bias red-team and #9 Japanese/English terminology review are still required and are not considered completed by later technical progress.
 
 The project intentionally allows preparatory specification work for a later phase when that work reduces benchmark gaming or implementation ambiguity. This does not waive earlier phase exit criteria or any real-money gate.
@@ -151,7 +151,7 @@ Exit condition:
 A non-developer can choose a policy and understand the visible decision and evidence state for every company in the fixed 100-company pilot, with at least two meaningfully different profiles evaluated against the same evidence snapshot.
 
 ### Gate to full M3 integration
-Complete #42 → #43 → #44. Preparatory M3 specification/research may proceed in parallel where it does not depend on unfinished M2 behavior.
+Complete #42 → #43 → #44. Preparatory M3 specification/research and TSE-universe work may proceed in parallel where they do not depend on unfinished M2 behavior.
 
 ---
 
@@ -175,33 +175,46 @@ The financial evaluation contract was fixed before portfolio results are generat
 
 **Issue:** #6 — completed. See `docs/PAPER_PORTFOLIO_EVALUATION.md`.
 
-### Workstream 3B — Benchmark and universe — OPEN
+### Workstream 3B — Canonical Japan-equity universe — OPEN
 
-1. **#45 — M3.2a:** research and pin the first broad Japan-equity benchmark, including reproducibility and licensing constraints.
-2. **#46 — M3.2b:** expand the existing identity spine from the fixed engineering cohort to the complete pinned benchmark universe.
+The product universe and the financial benchmark are intentionally separate concerns.
 
-The benchmark must be chosen before portfolio performance is inspected.
+1. **#46 — M3.2b1:** build one pinned canonical universe of domestic companies listed on TSE Prime, Standard and Growth. This is the direct scale step from the fixed 100-company engineering cohort to the broad Japan-equity company universe (roughly 3,700 companies; exact count is whatever the pinned official JPX snapshot establishes).
+2. **#53 — M3.2b2:** run the existing conservative JPX/EDINET/NTA/GLEIF identity spine across that complete canonical TSE universe.
+3. **#54 — M3.2d:** scale the completed #42 coverage-state machinery and already integrated evidence adapters across the complete canonical TSE identity universe.
+4. **#55 — M3.2e:** scale the completed #43 deterministic policy screening across that same TSE-wide evidence snapshot.
 
-### Workstream 3C — Portfolio constructor — OPEN
+The 100-company cohort remains a stable regression and explainability fixture. It is not an intermediate investment universe and is not replaced by a hand-picked 1,500-company stage.
+
+### Workstream 3C — Benchmark selection and mapping — OPEN
+
+1. **#45 — M3.2a:** research and pin the first broad Japan-equity benchmark, including point-in-time reproducibility and licensing constraints, before portfolio results are inspected.
+2. **#50 — M3.3b:** ingest one pinned benchmark constituent/weight snapshot and map it onto canonical TSE identities from #53. The benchmark is therefore a versioned subset/view of the broader TSE universe.
+
+Benchmark selection may proceed in parallel with #46/#53, but #50 requires both the adopted benchmark and canonical TSE identities.
+
+### Workstream 3D — Portfolio constructor — OPEN
 
 1. **#47 — M3.2c:** review mature OSS and define the minimum bounded constructor; do not select a method by observed return performance.
 2. **#49 — M3.3a:** implement only the selected deterministic paper-only constructor and its versioned configuration.
 
 Use mature portfolio libraries where possible. Do not invent an optimizer unless the OSS review demonstrates a gap.
 
-### Workstream 3D — Benchmark / market-data ingestion — OPEN
+### Workstream 3E — Market-return ingestion — OPEN
 
-**#50 — M3.3b:** build reproducible, point-in-time benchmark and market-data ingestion for an explicitly bounded evaluation period, including corporate-action and missing-return behavior.
+**#56 — M3.3c:** ingest the bounded market-return and corporate-action data required by the first evaluation period after #50 has fixed the mapped benchmark snapshot. Missing held-security returns fail closed.
 
-This work remains separate from constructor logic so a data/licensing failure does not contaminate or expand the constructor task.
+Market-return ingestion remains separate from benchmark membership/mapping and constructor logic because each has independent data, licensing and failure modes.
 
-### Workstream 3E — First integrated paper evaluation — OPEN
+### Workstream 3F — First integrated paper evaluation — OPEN
 
-**#51 — M3.3c:** combine previously completed components without introducing new methodology inside the integration issue.
+**#51 — M3.3d:** combine previously completed components without introducing new methodology inside the integration issue.
 
 Required output includes:
 - selected policy and evidence versions;
-- excluded/WATCH/unscreened coverage;
+- TSE-wide evidence/screening provenance;
+- mapped benchmark coverage and unscreened weight;
+- excluded/WATCH/NONE coverage;
 - resulting target portfolio;
 - benchmark comparison;
 - concentration and risk trade-offs;
@@ -213,7 +226,7 @@ Required output includes:
 - complete reproduction manifest and output hashes.
 
 ### Milestone M3 — Peace Capital v0 — NOT YET COMPLETE
-A user can create a reproducible paper portfolio aligned with their own policy and see the financial trade-offs honestly.
+A user can create a reproducible paper portfolio aligned with their own policy and see the financial trade-offs honestly, while the underlying Japan-equity evidence universe remains broader than the selected benchmark.
 
 ### Gate to Phase 4
 Demonstrate at least one concrete non-ideological user benefit such as research time saved, easier customization, clearer evidence, or lower decision friction.
@@ -224,9 +237,9 @@ Demonstrate at least one concrete non-ideological user benefit such as research 
 
 WA Commons expands **universes and evidence sources**, not hand-picked lists of interesting companies.
 
-### Stage U1 — Fixed 100-company engineering cohort — CURRENT
+### Stage U1 — Fixed 100-company engineering cohort — CURRENT REGRESSION FIXTURE
 
-The deterministic 100-company Japanese listed-issuer pilot remains the bounded cohort for M2 integration and regression work.
+The deterministic 100-company Japanese listed-issuer pilot remains the bounded cohort for M2 integration, regression work and explainability acceptance.
 
 Purpose:
 - stable identity regression target;
@@ -234,30 +247,45 @@ Purpose:
 - policy comparison;
 - explainable screener completion.
 
-It is not intended to be a representative hand-curated moral list.
+It is not intended to be a representative hand-curated moral list or a permanent product universe.
 
-### Stage U2 — Pinned benchmark universe — NEXT
+### Stage U2 — Canonical TSE domestic company universe — NEXT
 
-After #45 chooses the primary benchmark, #46 expands the identity spine to **every security in the pinned benchmark snapshot**.
+After the 100-company contracts are stable, #46 → #53 expands directly to the complete pinned domestic-company universe on TSE Prime, Standard and Growth.
 
 Rules:
-- use the benchmark constituent set, not maintainer preference, to choose companies;
-- use point-in-time membership where required by the evaluation period;
+- use the official JPX listed-company universe, not maintainer preference or benchmark membership, to choose companies;
+- pin the exact source snapshot/date and report the exact resulting company count rather than hard-coding an approximate count;
 - preserve unresolved/disputed identities instead of forcing name-only matches;
-- report unmapped count and weight explicitly.
+- keep investment products and TOKYO PRO Market outside canonical v0.1 unless a later explicit scope issue changes that boundary;
+- treat the canonical TSE universe as the reusable company-identity base for screening, benchmark mapping and future source adapters.
 
-This benchmark universe becomes the first real investable research universe for M3.
+### Benchmark views — separate from universe expansion
 
-### Stage U3 — Broader TSE identity universe — LATER
+A benchmark is not a coverage stage. #45 selects the benchmark for financial comparison and #50 maps its point-in-time constituents/weights onto canonical TSE identities.
 
-After the benchmark pipeline is stable, extend the identity layer toward the broader TSE-listed universe. This is an identity/coverage expansion, not permission to claim complete evidence about every company.
+This preserves two independent questions:
+
+```text
+Which Japanese listed companies can WA Commons identify and screen?
+        -> canonical TSE universe (#46/#53/#54/#55)
+
+What unconstrained portfolio should Peace Capital compare against?
+        -> pinned benchmark view (#45/#50)
+```
+
+The benchmark may contain roughly hundreds or thousands of securities, but its size does not define the WA Commons company-coverage ceiling.
+
+### Later universe expansion
+
+After the TSE pipeline is stable, expansion can consider other Japanese exchanges/eligible security types and then international listed-company universes. Each expansion requires an explicit universe definition, source/rights review and identity acceptance rather than a hand-picked company list.
 
 ### Evidence expansion rule — source-by-source, universe-wide
 
-Evidence should normally expand by adding one reviewed source adapter and applying it across the relevant whole universe, for example:
+Evidence should normally expand by adding one reviewed source adapter and applying it across the relevant whole canonical universe, for example:
 
 ```text
-pinned company universe
+canonical TSE company universe
         ↓
 SIPRI adapter across all eligible entities
         ↓
@@ -453,17 +481,29 @@ M2 integration
 M2 COMPLETE
 
 M3 evaluation spec (#6) — COMPLETE
+
+Canonical TSE coverage path:
+#46 TSE company universe
         ↓
+#53 TSE identity enrichment
+        ↓
+#54 TSE evidence coverage  ← #42 semantics
+        ↓
+#55 TSE policy screening   ← #43 semantics
+
+Financial benchmark path:
 #45 Benchmark selection
-   ├────→ #46 Benchmark-universe identity expansion
    ├────→ #47 OSS/constructor design → #49 Constructor implementation
-   └────→ #50 Benchmark/market-data ingestion
-                    ↓
-       #46 + #49 + #50 + M2 outputs
-                    ↓
-          #51 First paper evaluation
-                    ↓
-                M3 COMPLETE
+   └─────────────┐
+                 └→ #50 Benchmark snapshot + TSE mapping ← #53
+                                ↓
+                           #56 Market returns
+
+#44 + #49 + #50 + #55 + #56
+                ↓
+      #51 First paper evaluation
+                ↓
+             M3 COMPLETE
         ↓
 Phase 4 Utility validation
         ↓
@@ -478,6 +518,45 @@ Phase 8 International ecosystem
 Phase 9 Long-horizon infrastructure
 ```
 
+## Agent-sized task contract
+
+Roadmap phases and workstreams are **planning umbrellas, not worker assignments**. A strong autonomous coding/research model such as Claude Sonnet-class or GPT Luna MAX-class should receive one exact GitHub Issue at a time.
+
+An Issue is ready for autonomous assignment only when all of these are true:
+
+1. **One durable outcome:** one primary artifact, decision record, component or integration result can be reviewed independently.
+2. **Durable prerequisites:** every required predecessor is complete and versioned; the worker is not asked to invent missing upstream contracts.
+3. **One dominant uncertainty/failure family:** research selection, source licensing, parsing/ingestion, algorithm design, implementation and end-to-end acceptance are split when they can fail independently.
+4. **Explicit inputs and outputs:** the Issue names which prior artifacts/contracts it consumes and what the next task may rely on.
+5. **Finite Definition of Done:** completion is observable through hashes, counts, invariants, targeted tests, a decision table or another reproducible acceptance result.
+6. **Stop/block conditions:** the worker knows when to stop rather than silently substituting data, weakening identity rules, expanding scope or redesigning methodology.
+7. **Out-of-scope boundary:** adjacent discoveries become separate issues; they do not authorize opportunistic framework work.
+8. **Proportional verification:** verification targets the changed claims/failure modes; broad suites are reserved for shared-core or milestone gates.
+9. **Context-fit:** the task can be understood from the exact Issue, directly referenced contracts and the smallest relevant source/tests without loading the entire repository history.
+10. **Durable handoff:** if a run cannot finish safely, it leaves `COMPLETED / OBSERVED / RULED_OUT / NEXT_ACTION / DEFERRED` evidence and a bounded Git checkpoint.
+
+If an Issue fails this checklist, split or respec it **before** handing it to an autonomous worker. Do not compensate for an oversized task by giving the model a giant prompt or repeatedly relaunching it.
+
+## Task-granularity audit — 2026-08-30
+
+Current near-term issues after respec:
+
+- **#42 — READY:** one coverage artifact; state semantics and tests are explicit. Existing autonomous-worker contract is suitably bounded.
+- **#43 — READY after #42:** one deterministic screening artifact; policy/evidence traceability is explicit.
+- **#44 — READY after #43:** one minimal explainability report/milestone review; broad production UI is explicitly excluded.
+- **#45 — READY research task:** one benchmark decision record; no implementation/backtest is permitted.
+- **#46 — READY:** narrowed to canonical JPX/TSE universe enumeration only. Identity enrichment was split out.
+- **#53 — READY after #46:** one TSE-wide identity artifact; source-format failures have explicit stop behavior.
+- **#54 — READY after #42/#53:** one TSE-wide evidence-coverage artifact using existing adapters only.
+- **#55 — READY after #43/#54:** one TSE-wide deterministic policy-screening artifact.
+- **#47 — READY after #45:** one OSS/constructor design decision; implementation and returns remain separate.
+- **#49 — READY after #47:** one constructor implementation with fixed fixtures/invariants.
+- **#50 — READY after #45/#53:** narrowed to benchmark constituent/weight ingestion + canonical TSE mapping; return history was split out.
+- **#56 — READY after #50:** one bounded market-return/corporate-action ingestion artifact.
+- **#51 — READY only after all prerequisites:** pure integration/evaluation; methodology changes are explicit blockers.
+
+Phases 4–9 are **not yet worker-ready as whole tasks**. Before execution, each workstream must be converted into Issue-sized contracts using the checklist above; agents should never be assigned “do Phase 4”, “build Peace Router”, “internationalize WA Commons”, or similar roadmap-sized prompts.
+
 ## Task-splitting discipline
 
 To keep work bounded and failures local:
@@ -486,7 +565,8 @@ To keep work bounded and failures local:
 - research/selection, implementation, data ingestion and end-to-end acceptance should remain separate when they can fail independently;
 - later issues must consume completed, versioned outputs rather than silently redesigning earlier methodology;
 - if an issue grows beyond its stated scope, split it instead of broadening acceptance criteria;
-- each implementation issue should have targeted tests and exact changed-file review before merge.
+- each implementation issue should have targeted tests and exact changed-file review before merge;
+- scaling row count alone does not require an artificial intermediate universe when the same deterministic pipeline can run over a complete source-defined universe.
 
 ## Hard gates
 
@@ -497,15 +577,18 @@ WA Commons should **not**:
 - hide disputed evidence to make the product look cleaner;
 - treat missing evidence as PASS/clean/safe;
 - choose companies manually because they look controversial when a universe-level selection rule is available;
+- insert an arbitrary intermediate company universe merely to reduce row count when the canonical source-defined universe is tractable;
 - choose or replace a benchmark after observing performance to improve headline results;
 - grant agents broad authority merely because the software is technically capable of it.
 
 ## Immediate next work
 
-The nearest bounded sequence is:
+The nearest bounded sequence remains:
 
 1. **#42 — M2.2a:** 100-company evidence coverage matrix.
 2. **#43 — M2.2b:** deterministic 100-company policy screening.
 3. **#44 — M2.2c:** explainable screener report and explicit M2 exit review.
 
-In parallel only where dependencies allow, **#45** may research and preregister the first Japan-equity benchmark. Portfolio construction, market-data integration and end-to-end evaluation remain separate later issues.
+The canonical TSE scale path **#46 → #53** may proceed independently of #45 where capacity permits. After the 100-company semantics are complete, reuse them as **#54 → #55** over the full TSE universe.
+
+In parallel only where dependencies allow, **#45** may research and preregister the first Japan-equity benchmark. Portfolio constructor work (#47 → #49), benchmark mapping (#50), market-return ingestion (#56) and end-to-end evaluation (#51) remain separate bounded issues.
