@@ -1,4 +1,4 @@
-# WA Commons Purchase Route Router — Product Proposal v0.2
+# WA Commons Purchase Route Router — Product Proposal v0.3
 
 Status: **preregistered future-domain design; not current implementation authority**  
 Date: 2026-08-31
@@ -7,9 +7,13 @@ Date: 2026-08-31
 
 WA Commons will treat purchasing as the first preregistered candidate for the second Peace Router domain, but **not** as a new general shopping destination, marketplace, price-comparison crawler, or universal ethical-product score.
 
-The primary product strategy is now **distribution-first / integration-first**:
+The primary product strategy is **distribution-first / integration-first**:
 
 > **Do not ask users to abandon the shopping and comparison services they already use. Bring WA Commons to the point where the user is already deciding what to buy and where to buy it.**
+
+The deployment strategy for the first public experiment is also **local-first / serverless-friendly / ship-small**:
+
+> **Publish the smallest useful, auditable Router that can run primarily on the user's own device, without requiring WA Commons to operate an always-on central application server. Let the open-source community improve coverage after the mechanism is real and usable.**
 
 The first hypothesis to test is:
 
@@ -18,8 +22,10 @@ The first hypothesis to test is:
 The staged experiment is:
 
 1. **Books mechanism test first** — use strong book identity such as ISBN. The preferred entry is an existing discovery surface through a browser extension/sidebar, share-to-WA action, or pasted URL; direct ISBN entry remains a fallback.
-2. **Electronics and PC-parts extension second** — only after the mechanism is useful, add products identified by JAN/GTIN/model number and bounded price/availability observations where rights and data quality permit.
-3. **Standalone WA search later, only if justified** — a first-party product search page may become another client of the same Router core after the integration-first mechanism proves useful and suitable data rights exist. It is not the acquisition or MVP assumption.
+2. **Release a deliberately small public v0.1** — bounded retailer coverage is acceptable if it is explicit. The first release should prove that a real user can invoke WA Commons, identify one exact book, see at least one alternative route, inspect the supporting organization Evidence/Policy state, and leave WA Commons to buy from the chosen retailer.
+3. **Grow through open contribution** — retailer-route adapters, organization Evidence, documentation, tests and supported surfaces should be reviewable contribution points rather than private operational knowledge.
+4. **Electronics and PC-parts extension second** — only after the Books mechanism is useful, add products identified by JAN/GTIN/model number and bounded price/availability observations where rights and data quality permit.
+5. **Standalone WA search later, only if justified** — a first-party product search page may become another client of the same Router core after the integration-first mechanism proves useful and suitable data rights exist. It is not the acquisition or MVP assumption.
 
 Version 0 is **affiliate-free**. WA Commons will not receive routing commissions in the initial experiment.
 
@@ -124,7 +130,23 @@ The extension must not require broad browsing-history collection. It should not 
 
 On mobile or unsupported browsers, the user can share the current product/book URL to WA Commons. The Router resolves the exact item if a permitted adapter can do so, then returns alternative routes.
 
-This should be a first-class path, not merely an emergency fallback, because it avoids dependence on one browser or one page DOM.
+This is a first-class path, not merely an emergency fallback, because it works with the user's existing mobile browsing/app behavior and avoids dependence on one browser or one page DOM.
+
+Conceptually:
+
+```text
+Retailer / browser / search app
+        ↓
+Share
+        ↓
+WA Commons on the same device
+        ↓
+Resolve ISBN / item identity
+        ↓
+Apply local Policy + Evidence
+        ↓
+Show alternative routes
+```
 
 ### P3 — Direct identifier input
 
@@ -189,10 +211,12 @@ Books are the first mechanism test because they provide a comparatively strong p
 
 ### Preferred entry order
 
-1. browser extension / side panel from a supported book page;
-2. share-to-WA or pasted book URL;
+1. share-to-WA from a supported mobile/browser/app surface or browser extension / side panel from a supported book page;
+2. pasted book URL;
 3. ISBN direct entry;
 4. standalone title search only if later needed and supported by a reviewed data source.
+
+The exact order between share and browser extension may differ by platform; both are thin clients of the same Router core.
 
 ### Required behavior
 
@@ -201,13 +225,35 @@ For one resolved edition/item, the Router should be able to show zero or more su
 - seller;
 - marketplace/platform, if any;
 - fulfillment actor when known and materially distinct;
-- direct retailer URL;
+- direct retailer URL or reviewed search/deep-link route;
 - availability state when a permitted source supports it;
 - relevant organization identity/evidence;
 - user-policy result and explanation;
 - `UNKNOWN` / `DISPUTED` / unavailable-route states rather than forced conclusions.
 
 A route with insufficient evidence is not converted into a negative or positive label.
+
+### Minimum public v0.1 vertical slice
+
+The first public build does **not** need broad bookstore coverage or a complete price database. A useful vertical slice is enough.
+
+The release should be able to demonstrate, on at least one supported device/platform and a bounded set of reviewed routes:
+
+```text
+existing book page / URL / ISBN
+        ↓
+WA Commons invoked explicitly
+        ↓
+exact edition resolved
+        ↓
+1+ alternative purchase route shown
+        ↓
+route organization Evidence + Policy explanation visible
+        ↓
+user opens chosen external retailer
+```
+
+Coverage gaps must be visible. "Supported routes: 3" is acceptable; pretending those three are the entire market is not.
 
 ### Book-specific research gate
 
@@ -218,13 +264,73 @@ Before implementation, an exact source/rights review must verify:
 - which retailers expose searchable/deep-linkable book routes;
 - whether browser extensions, page-context extraction, sharing, deep links or caching are allowed under each current service contract;
 - whether availability or price data may be retrieved, stored and redisplayed;
+- whether deterministic route-link generation from ISBN is allowed and reliable for each supported retailer;
 - the legal/contractual meaning of any pricing assumptions used in the experiment.
 
 A browser extension is not a loophole around a site's terms. If a service prohibits the needed automated extraction or reuse, WA Commons must use a narrower permitted handoff, an official interface, or omit that integration.
 
 No legal or data-rights assumption from brainstorming is adopted merely because it sounds plausible.
 
-## 7. Stage P2 — Electronics and PC parts
+## 7. Local-first / serverless-friendly deployment model
+
+The first public purchasing experiment should be designed so that **an always-on WA Commons application server is not required for ordinary routing**.
+
+The preferred split is:
+
+```text
+Versioned public WA data / rules
+        ↓ occasional update
+User device
+  - Policy
+  - routing logic
+  - organization Evidence cache
+  - route templates/adapters where safe
+  - local result generation
+        ↓
+External retailer / source
+```
+
+### What should stay local by default
+
+Where technically practical:
+
+- the user's Policy and preferences;
+- Policy evaluation;
+- cached organization Evidence and provenance;
+- deterministic route selection/explanation;
+- recent local history, if the user enables it;
+- the explicit item identifier handed to the Router.
+
+A user should not need an account merely to apply their own Policy to a supported book route.
+
+### Public data-pack distribution
+
+WA Commons may distribute versioned static data/rule packs through ordinary open-source release infrastructure, for example a signed or hashed GitHub Release asset or another static host. The exact transport is an implementation choice, not a normative dependency.
+
+A data pack may contain bounded material such as:
+
+- supported retailer/legal-entity identifiers;
+- parent/organization Evidence needed by the Router;
+- route-adapter metadata that is legal to redistribute;
+- schema/rule versions;
+- source locators and hashes.
+
+The client should be able to verify the version/hash before applying an update.
+
+### What still may require the network
+
+Serverless-friendly does not mean offline-only. A user may still open retailer pages, retrieve permitted public metadata, check for a new WA data pack, or call a reviewed public interface.
+
+However:
+
+- WA Commons should not introduce a central proxy merely because it is convenient;
+- API secrets must not be embedded in a public client application;
+- if a required source only works through protected server-side credentials, that dependency must be evaluated explicitly rather than hidden inside the client;
+- no central telemetry service is required for core routing.
+
+If aggregate research metrics are later collected, participation should be explicit and privacy-preserving; local operation should remain possible without sending the user's browsing history or Policy to WA Commons.
+
+## 8. Stage P2 — Electronics and PC parts
 
 Only after the Books Router demonstrates useful routing behavior should the same mechanism expand to electronics and PC parts.
 
@@ -262,7 +368,7 @@ observed difference              +¥200
 
 The Router must not call a route "cheapest" or "best" beyond what the actual data coverage and timestamp justify.
 
-## 8. Entity model
+## 9. Entity model
 
 The purchase domain must not collapse distinct actors into one company.
 
@@ -291,7 +397,7 @@ Each organization may resolve independently to the existing WA Commons legal-ent
 
 `Seller`, `MarketplaceOperator` and `FulfillmentProvider` must not be treated as interchangeable merely because the user experiences them on one web page.
 
-## 9. Integration boundary
+## 10. Integration boundary
 
 Integrations should be thin and replaceable.
 
@@ -299,7 +405,7 @@ Each discovery-surface adapter should answer only a narrow question such as:
 
 > **What exact item is the user explicitly asking WA Commons to evaluate, and what source locator proves that handoff?**
 
-The adapter should not become a hidden second catalog, crawler, browser-history collector, or policy engine.
+The adapter should not become a hidden second catalog, crawler, browser-history collector, policy engine, or server dependency.
 
 Preferred architecture:
 
@@ -312,7 +418,7 @@ Future WA Search ──┘
 
 If one external site changes its DOM, API, or policy, that adapter may fail without redefining the Router core.
 
-## 10. Reuse from Peace Capital
+## 11. Reuse from Peace Capital
 
 The point of this experiment is to test whether the shared core really generalizes.
 
@@ -335,11 +441,12 @@ The point of this experiment is to test whether the shared core really generaliz
 - discovery-surface and retailer adapters;
 - short-lived price/stock observations;
 - browser/share interaction for route choice;
+- local data-pack/update handling;
 - optional later standalone search client.
 
 Phase 5 must extract a domain-independent routing contract rather than silently copying investment-specific semantics into purchasing. Purchasing is a test of the abstraction, not permission to fork a second independent policy/evidence stack.
 
-## 11. Policy behavior
+## 12. Policy behavior
 
 WA Commons does not define one official "good retailer", "Japanese retailer" or "peaceful purchase" score.
 
@@ -355,7 +462,7 @@ The exact purchasing Policy vocabulary will be designed only after Phase 5 estab
 
 Missing evidence must remain missing. For example, failure to resolve a seller's parent does not imply independence, domestic ownership, safety or Policy compliance.
 
-## 12. Affiliate-free v0 and conflicts of interest
+## 13. Affiliate-free v0 and conflicts of interest
 
 The first experiment will use **no affiliate commissions**.
 
@@ -370,7 +477,50 @@ No affiliate rate, sponsorship payment or commercial consideration is a routing 
 
 A future monetization model is not prohibited forever, but introducing one would require a separate governance/design decision. Any future commercial incentive must be visibly disclosed and structurally isolated from deterministic Policy/routing output.
 
-## 13. Privacy and authority
+## 14. Ship-small and grow as a commons
+
+The first goal is **not** broad market coverage. The first goal is to make the mechanism public, inspectable and genuinely usable by someone outside the development environment.
+
+The release strategy is:
+
+```text
+small useful vertical slice
+        ↓
+public open-source release
+        ↓
+real use + visible limitations
+        ↓
+Issues / corrections / new route adapters / tests
+        ↓
+broader community-maintained coverage
+```
+
+A v0.1 with a small reviewed retailer set is preferable to a private prototype that claims eventual comprehensive coverage but never reaches users.
+
+### Minimum v0.1 success condition
+
+At minimum, the public release should make all three of these possible:
+
+1. **User utility:** one real user can resolve a supported book and discover/open an alternative purchase route.
+2. **Reproducibility:** another person can inspect the open code/data and reproduce the supported routing result without private infrastructure or private onboarding.
+3. **Extensibility:** a third party can add or propose one new bookstore/route Evidence contribution through a documented, reviewable path without weakening Evidence or identity rules.
+
+These are mechanism proofs, not scale claims.
+
+### Community contribution boundary
+
+Community growth does not mean unreviewed crowdsourcing of claims. Contributions must retain the same Evidence discipline:
+
+- exact source and provenance;
+- terms/license review where relevant;
+- deterministic route or identity evidence where possible;
+- `UNKNOWN` / `DISPUTED` preserved;
+- focused tests/fixtures for adapters;
+- correction path for stale or wrong retailer/entity mappings.
+
+The project should make it easy to contribute **verified coverage**, not easy to publish unsupported judgments.
+
+## 15. Privacy and authority
 
 The first implementation should minimize user data.
 
@@ -378,14 +528,16 @@ The first implementation should minimize user data.
 - no stored payment credentials;
 - no automatic order submission;
 - no broad browsing-history collection;
+- no required central account for core v0.1 routing;
 - integration clients should inspect only the page/item the user explicitly invokes;
 - do not retain submitted URLs or identifiers longer than necessary unless the user explicitly chooses history/saved items;
 - browser extensions/share targets receive only the minimum permissions needed for the explicit user action;
-- do not transmit unrelated page content when a stable product identifier is sufficient.
+- do not transmit unrelated page content when a stable product identifier is sufficient;
+- local Policy/preferences remain on-device by default.
 
 The Router recommends or explains routes. The user remains the actor who chooses and completes the purchase.
 
-## 14. Evidence and legal safety
+## 16. Evidence and legal safety
 
 The existing WA Commons separation remains mandatory:
 
@@ -418,9 +570,9 @@ Unsafe shortcuts include:
 
 All new data sources and integration surfaces require exact terms/license review before ingestion, caching or redistribution.
 
-## 15. Success measures
+## 17. Success measures
 
-The first experiments should measure the mechanism and distribution advantage rather than ideology adoption.
+The first experiments should measure the mechanism, distribution advantage and open reproducibility rather than ideology adoption.
 
 Candidate measures include:
 
@@ -434,11 +586,13 @@ Candidate measures include:
 - rate at which a user voluntarily chooses a different route after seeing alternatives;
 - repeated-use intent or actual repeated use;
 - friction from discovery page to WA result;
+- whether a clean install can reproduce the documented v0.1 route without private backend infrastructure;
+- whether an external contributor can add one reviewed route/adapter using public documentation;
 - non-ideological benefit such as easier availability discovery, direct-retailer discovery or lower decision friction.
 
 A later outcome metric may record **Redirected Purchase Value**: the value of purchases where the user voluntarily chose a different route after using WA Commons. This is a routing signal only. It must not be presented as proof of equivalent economic benefit, domestic value added or peace impact.
 
-## 16. Kill / pivot conditions
+## 18. Kill / pivot conditions
 
 Do not proceed merely because the design is attractive.
 
@@ -450,6 +604,7 @@ Reconsider or stop the purchasing experiment if evidence shows that:
 - item identity cannot be kept sufficiently exact;
 - retailer/legal-entity resolution is too weak for the intended claims;
 - source terms prevent a reproducible open implementation;
+- a central backend becomes mandatory for core routing and no sustainable/publicly reproducible deployment path exists;
 - users do not find route comparison useful without ideological motivation;
 - users rarely change routes even when the practical cost is negligible;
 - maintaining the routing data requires building a full marketplace/price-comparison crawler;
@@ -457,13 +612,16 @@ Reconsider or stop the purchasing experiment if evidence shows that:
 
 If the experiment fails, Phase 6 returns to the other candidate domains instead of weakening Evidence rules to force a success.
 
-## 17. Explicit non-goals
+## 19. Explicit non-goals
 
 Version 0 will not:
 
 - operate a marketplace;
 - take payment or place orders;
 - require users to begin shopping inside WA Commons;
+- require an always-on WA Commons application server for core Books v0.1 routing;
+- require a user account for core routing;
+- collect broad browsing history or hidden behavioral telemetry;
 - build a complete first-party book/product search engine before the Router mechanism is proven;
 - guarantee the global cheapest price;
 - build a complete Amazon/Rakuten/price-comparison clone;
@@ -472,9 +630,10 @@ Version 0 will not:
 - scrape or republish a service in violation of its terms;
 - use affiliate commission to influence ranking;
 - autonomously redirect or complete a user's purchase;
+- claim comprehensive retailer coverage from a bounded v0.1;
 - displace the current M2/M3 execution order.
 
-## 18. Preregistered sequence
+## 20. Preregistered sequence
 
 ```text
 Current work
@@ -483,8 +642,14 @@ M2 / M3 / Utility proof
 Phase 5
 Extract domain-independent Peace Router core
         ↓
+Phase 6A0
+Books public v0.1 vertical slice
+(local-first / serverless-friendly / affiliate-free)
+        ↓
+Public use + reproducibility + contributor gate
+        ↓
 Phase 6A
-Books integration-first mechanism test
+Books integration-first mechanism expansion
 (browser/share/URL + ISBN fallback)
         ↓
 Utility / evidence / rights / integration gate
