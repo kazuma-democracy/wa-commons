@@ -15,7 +15,7 @@ The first proof vehicle is **Experiment 001 — Peace Capital**.
 - **M1 — Reproducible Evidence Graph: COMPLETE.** Measured clean reproduction is recorded in `docs/M1_ACCEPTANCE.md`.
 - **M2 — Explainable company screener: IN PROGRESS.** The versioned user-policy language and deterministic evaluator are implemented; the remaining bounded path is #42 → #43 → #44.
 - **M3 — Peace Capital paper portfolio: IN PROGRESS.** The preregistered evaluation specification is complete. The product-universe strategy is now **100-company engineering cohort → canonical TSE domestic listed-company universe**; the benchmark is a separately selected subset/view used for financial evaluation rather than an intermediate coverage universe.
-- **Phase 5–6 future design:** a Purchase Route Router is now preregistered as the first second-domain candidate. The mechanism test starts with books, then may extend to electronics/PC parts; v0 is affiliate-free. See `docs/PURCHASE_ROUTER_PROPOSAL.md`. This is future design only and does not displace current M2/M3 work or waive Phase 5/6 gates.
+- **Phase 5–6 future design:** a Purchase Route Router is preregistered as the first second-domain candidate. The current product strategy is **distribution-first / integration-first**: begin where users already browse or compare products, use thin browser/share/URL handoffs to invoke WA Commons, test books first, then electronics/PC parts, and treat standalone WA product search as an optional later client rather than the MVP acquisition surface. v0 is affiliate-free. See `docs/PURCHASE_ROUTER_PROPOSAL.md`. This is future design only and does not displace current M2/M3 work or waive Phase 5/6 gates.
 - **Phase 0 governance cleanup remains open.** #8 ideological-bias red-team and #9 Japanese/English terminology review are still required and are not considered completed by later technical progress.
 
 The project intentionally allows preparatory specification work for a later phase when that work reduces benchmark gaming or implementation ambiguity. This does not waive earlier phase exit criteria or any real-money gate.
@@ -379,6 +379,8 @@ The first future adapter candidate is the **Purchase Route Router** described in
 
 Phase 5 must extract a genuinely domain-independent contract that can support both investment decisions and purchase-route decisions without duplicating the evidence/policy/audit stack. The purchasing proposal is therefore a test fixture for the abstraction, not authorization to fork a separate shopping architecture.
 
+The purchasing client should also test a second abstraction boundary: **distribution surfaces are replaceable clients, not part of the Router core**. Browser extensions, share targets, URL handoffs and any future standalone WA search should all feed the same product-identity handoff and routing contract.
+
 ### Milestone M5 — Domain-independent router
 A second domain can reuse the core without duplicating the evidence/policy/audit stack.
 
@@ -389,9 +391,9 @@ A second domain can reuse the core without duplicating the evidence/policy/audit
 ### Purpose
 Test whether the mechanism generalizes beyond investing.
 
-The second domain is still subject to evidence and utility gates rather than maintainer preference. The **first preregistered candidate** is purchase-route selection: help a user who already knows what item they want compare *where to buy it* using shared organization evidence plus the user's own policy.
+The second domain is still subject to evidence and utility gates rather than maintainer preference. The **first preregistered candidate** is purchase-route selection using a **distribution-first / integration-first** entry: meet the user on an existing shopping, retailer, publisher, search or comparison surface, accept an explicit item handoff, and compare *where to buy that exact item* using shared organization Evidence plus the user's own Policy.
 
-This is deliberately **not** a general shopping search engine, marketplace, universal ethical-retailer score, or price-comparison crawler.
+This is deliberately **not** a requirement to build a new general shopping search engine, marketplace, universal ethical-retailer score, or price-comparison crawler. A standalone WA product search page is an optional later client only if measured demand and source rights justify it.
 
 See `docs/PURCHASE_ROUTER_PROPOSAL.md` for the full product hypothesis and non-goals.
 
@@ -405,28 +407,30 @@ See `docs/PURCHASE_ROUTER_PROPOSAL.md` for the full product hypothesis and non-g
 
 If the purchasing candidate fails these criteria in measured use or data/rights feasibility, return to other candidates such as procurement/vendor choice, banking/financial-product comparison, donations or another voluntary economic decision rather than weakening Evidence rules.
 
-### Workstream 6A — Books Purchase Route mechanism test — PREREGISTERED
+### Workstream 6A — Books integration-first mechanism test — PREREGISTERED
 
-First test the routing mechanism on books.
+First test the routing mechanism on books while borrowing existing discovery behavior instead of asking users to begin shopping inside WA Commons.
 
 Intended shape:
-- user shares/pastes a book URL or enters an ISBN;
+- user explicitly invokes WA Commons from a supported book page through a browser extension/side panel, share-to-WA action or URL handoff;
+- ISBN direct entry remains a deterministic fallback;
 - resolve the exact supported book/edition identity conservatively;
 - enumerate a bounded set of legally/reproducibly discoverable purchase routes;
 - keep seller, marketplace/platform and fulfillment actors distinct;
 - resolve route organizations to WA Commons legal entities only where existing strong-ID rules support the match;
-- apply user-owned policy and explain which evidence/rules fired;
-- send the user to the external retailer to complete the purchase.
+- apply user-owned Policy and explain which Evidence/rules fired;
+- send the user to the external retailer to complete the purchase;
+- do not require a first-party WA title-search catalog for the mechanism test.
 
 Version 0 is **affiliate-free** and has no checkout, payment credentials or autonomous ordering.
 
-Before implementation, a dedicated source/terms task must verify ISBN metadata, retailer discovery/deep-link paths, availability/price reuse rights, caching limits and any pricing assumptions. Brainstorming claims are not source-registry adoption decisions.
+Before implementation, a dedicated source/terms/integration task must verify ISBN metadata, the minimum page/URL identity context that may be used from each candidate discovery surface, browser-extension or share-target constraints, retailer discovery/deep-link paths, availability/price reuse rights, caching limits and any pricing assumptions. A browser extension is not a loophole around a site's current terms. Brainstorming claims are not source-registry adoption decisions.
 
-Mechanism evaluation should measure exact identity quality, alternative-route coverage, entity-resolution coverage, user route-opening/route-change behavior, repeat utility and uncertainty/dispute states. Ideological-filter usage is not the primary success metric.
+Mechanism evaluation should measure exact identity quality by entry surface, invocation-to-result friction, alternative-route coverage, entity-resolution coverage, user route-opening/route-change behavior, repeat utility and uncertainty/dispute states. Ideological-filter usage is not the primary success metric.
 
 ### Workstream 6B — Electronics and PC-parts extension — PREREGISTERED AFTER 6A
 
-Only after the Books mechanism demonstrates useful routing behavior, extend to electronics and PC parts.
+Only after the Books mechanism demonstrates useful routing behavior, extend the same integration-first pattern to electronics and PC parts.
 
 Additional requirements:
 - use exact JAN/GTIN/model identifiers where possible;
@@ -435,20 +439,22 @@ Additional requirements:
 - never claim global cheapest/best routing beyond actual coverage;
 - where data supports it, expose the observed cost difference between an unconstrained route and a user-policy-compatible route.
 
-This stage is where retailers such as electronics specialists, marketplaces, manufacturer-direct stores and independent sellers may become comparable routes, but their inclusion depends on source rights and exact entity evidence rather than a hand-picked preferred-store list.
+This stage is where retailers such as electronics specialists, marketplaces, manufacturer-direct stores and independent sellers may become comparable routes, but their inclusion depends on source rights and exact entity Evidence rather than a hand-picked preferred-store list.
 
 ### Purchasing experiment guardrails
 
 - no universal WA Commons retailer morality or "Japan contribution" score;
 - no assumption that a Japanese seller/platform proves domestic manufacture or domestic value added;
-- missing retailer/parent/fulfillment evidence remains `UNKNOWN`/unresolved rather than favorable or unfavorable;
+- missing retailer/parent/fulfillment Evidence remains `UNKNOWN`/unresolved rather than favorable or unfavorable;
 - no affiliate commissions in v0;
 - no autonomous purchase or payment authority;
-- source and retailer terms/licensing must be reviewed before ingestion, caching or redistribution;
+- no broad browsing-history collection; integration clients inspect only the page/item the user explicitly invokes and request minimum necessary permissions;
+- source and retailer terms/licensing must be reviewed before page-context extraction, ingestion, caching or redistribution;
+- do not build a first-party product catalog merely to compensate for a failed integration path;
 - the current M2/M3 issue order remains authoritative until those gates are complete.
 
 ### Milestone M6 — Two-domain proof
-The same Peace Router core serves two different decision domains, and the second-domain experiment demonstrates direct user utility without duplicating the evidence/policy/audit stack.
+The same Peace Router core serves two different decision domains, and the second-domain experiment demonstrates direct user utility without duplicating the Evidence/Policy/audit stack or depending on one proprietary shopping surface.
 
 ---
 
@@ -560,11 +566,14 @@ Phase 4 Utility validation
 Phase 5 Peace Router core
         ↓
 Phase 6 Purchase Route Router candidate
-Books mechanism test
+Books integration-first mechanism test
+(browser/share/URL + ISBN fallback)
         ↓
-utility / evidence / rights gate
+utility / evidence / rights / integration gate
         ↓
 Electronics + PC-parts extension
+        ↓
+optional later standalone WA product search client
         ↓
 M6 Two-domain proof or explicit pivot
         ↓
@@ -651,4 +660,4 @@ The canonical TSE scale path **#46 → #53** may proceed independently of #45 wh
 
 In parallel only where dependencies allow, **#45** may research and preregister the first Japan-equity benchmark. Portfolio constructor work (#47 → #49), benchmark mapping (#50), market-return ingestion (#56) and end-to-end evaluation (#51) remain separate bounded issues.
 
-The Purchase Route Router remains **future preregistered design only**. It does not enter the immediate work queue until the relevant Phase 5/6 gates are met or a separately authorized bounded source/rights research issue is created.
+The Purchase Route Router remains **future preregistered design only**. It does not enter the immediate work queue until the relevant Phase 5/6 gates are met or a separately authorized bounded source/rights/integration research issue is created.
